@@ -1,35 +1,35 @@
 
 
 #include "uart.h"
+#include <avr/io.h>
 
-void uart_init(unsigned int ubrr)
+void uart0_init(uint32_t baud)
 {
-    /* Set baud rate */
-    UBRR0H = (unsigned char)(ubrr >> 8);
-    UBRR0L = (unsigned char)ubrr;
-    /* Enable receiver and transmitter */
-    UCSR0B = (1 << RXEN0) | (1 << TXEN0);
-    /* Set frame format: 8data, 2stop bit */
-    UCSR0C = (1 << URSEL0) | (1 << USBS0) | (3 << UCSZ00);
+    // Calculate UBRR for normal speed (U2X0=0)
+    uint16_t ubrr = (F_CPU / (16UL * baud)) - 1;
 
-    fdevopen(uart_put_char, uart_get_char);
+    // Set baud rate
+    UBRRH = (uint8_t)(ubrr >> 8);   // URSEL=0 here because we write UBRRH
+    UBRRL = (uint8_t)(ubrr & 0xFF); // Writing UBRRL triggers prescaler update on this AVR
+
+    // Frame format: Async, No parity, 1 stop, 8 data:
+    // URSEL=1 to write UCSRC on ATmega162; UMSEL=0; UPM1:0=00; USBS=0; UCSZ1:0=11
+    UCSRC = (1 << URSEL) | (1 << UCSZ1) | (1 << UCSZ0);
+
+    // Enable transmitter (TXEN0). (We can enable RX later when needed.)
+    UCSRB = (1 << TXEN) | (0 << RXEN) | (0 << UCSZ2);
 }
 
-int uart_put_char(char data, FILE * file)
+void uart0_putc(char c)
 {
-    /* Wait for empty transmit buffer */
-    while (!(UCSR0A & (1 << UDRE0)))
-        ;
-    /* Put data into buffer, sends the data */
-    UDR0 = data;
-    return 0;
+    // Wait for transmit buffer empty (UDRE set)
+    while (!(UCSRA & (1 << UDRE))) { /* spin */ }
+    UDR = c;
 }
 
-int uart_get_char(FILE * file)
+void uart0_puts(const char *s)
 {
-    /* Wait for data to be received */
-    while (!(UCSR0A & (1 << RXC0)))
-        ;
-    /* Get and return received data from buffer */
-    return UDR0;
+    while (*s) {
+        uart0_putc(*s++);
+    }
 }
