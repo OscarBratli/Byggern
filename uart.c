@@ -1,35 +1,54 @@
-
-
 #include "uart.h"
-#include <avr/io.h>
+#include <stdio.h>
+#include <avr/interrupt.h>
 
-void uart0_init(uint32_t baud)
-{
-    // Calculate UBRR for normal speed (U2X0=0)
-    uint16_t ubrr = (F_CPU / (16UL * baud)) - 1;
+// RX globals (still available if you want interrupt-driven RX)
+volatile unsigned char uart_rx_data = 0;
+volatile uint8_t uart_rx_flag = 0;
 
+// Forward declarations
+int uart_putchar(char c, FILE *stream);
+int uart_getchar(FILE *stream);
+
+void uart_init(unsigned int ubrr) {
     // Set baud rate
-    UBRRH = (uint8_t)(ubrr >> 8);   // URSEL=0 here because we write UBRRH
-    UBRRL = (uint8_t)(ubrr & 0xFF); // Writing UBRRL triggers prescaler update on this AVR
+    UBRR0H = (unsigned char)(ubrr >> 8);
+    UBRR0L = (unsigned char)ubrr;
 
-    // Frame format: Async, No parity, 1 stop, 8 data:
-    // URSEL=1 to write UCSRC on ATmega162; UMSEL=0; UPM1:0=00; USBS=0; UCSZ1:0=11
-    UCSRC = (1 << URSEL) | (1 << UCSZ1) | (1 << UCSZ0);
+    // Enable RX, TX and RX complete interrupt
+    UCSR0B = (1 << RXEN0) | (1 << TXEN0);   
 
-    // Enable transmitter (TXEN0). (We can enable RX later when needed.)
-    UCSRB = (1 << TXEN) | (0 << RXEN) | (0 << UCSZ2);
+
+    // Frame format: 8 data, 1 stop, no parity
+    UCSR0C = (1 << URSEL0) | (1 << UCSZ01) | (1 << UCSZ00);
+
+    // Connect stdio streams (printf + getchar/scanf)
+    fdevopen(uart_putchar, uart_getchar);
+
+    sei();
 }
 
-void uart0_putc(char c)
-{
-    // Wait for transmit buffer empty (UDRE set)
-    while (!(UCSRA & (1 << UDRE))) { /* spin */ }
-    UDR = c;
+void uart_transmit(unsigned char data) {
+    while (!(UCSR0A & (1 << UDRE0)));
+    UDR0 = data;
 }
 
-void uart0_puts(const char *s)
-{
-    while (*s) {
-        uart0_putc(*s++);
-    }
+int uart_putchar(char c, FILE *stream) {
+   
+    uart_transmit(c);
+    return 0;
 }
+
+int uart_getchar(FILE *stream) {
+    while (!(UCSR0A & (1 << RXC0)));  // wait until data received
+    return UDR0;
+}
+
+/*
+// RX interrupt (optional, not needed for getchar/scanf)
+ISR(USART_RXC_vect) {
+    uart_rx_data = UDR0;
+    uart_rx_flag = 1;
+}
+    
+*/
