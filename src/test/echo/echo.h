@@ -1,6 +1,6 @@
 #pragma once
 
-#include "uart.h"
+#include "uart/uart.h"
 #include <stdio.h>
 #include <stdlib.h>
 

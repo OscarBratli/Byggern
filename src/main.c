@@ -1,8 +1,8 @@
-#include "uart.h"
 #include <stdio.h>
 #include <stdlib.h>
+#include "uart/uart.h"
 
-#include "test_echo.h"
+#include "test/echo/echo.h"
 
 void setup(void) {
     uart_init(MYUBRR);

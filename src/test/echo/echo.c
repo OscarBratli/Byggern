@@ -1,4 +1,4 @@
-#include "test_echo.h"
+#include "echo.h"
 
 void test_echo(void)
 {

@@ -1,6 +1,4 @@
 #include "uart.h"
-#include <stdio.h>
-#include <avr/interrupt.h>
 
 // RX globals 
 volatile unsigned char uart_rx_data = 0;

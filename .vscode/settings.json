@@ -1,6 +1,9 @@
 {
     "files.associations": {
         "stdio.h": "c",
-        "test_sram.h": "c"
+        "test_sram.h": "c",
+        "test_echo.h": "c",
+        "stdlib.h": "c",
+        "echo.h": "c"
     }
 }

@@ -1,4 +1,4 @@
-#include "test_sram.h"
+#include "sram.h"
 
 void test_sram(void)
 {

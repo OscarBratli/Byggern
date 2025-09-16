@@ -9,3 +9,15 @@ Clone openocd repo:
 ```
 
 ```
+
+## Build project
+
+```
+make
+```
+
+## Flash device
+
+```
+make flash
+```
