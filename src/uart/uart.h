@@ -1,8 +1,5 @@
 #pragma once
 
-// Specify what controller is in use to import the correct I/O definitions
-#define __AVR_ATmega162__
-
 #include <stdio.h>
 #include <avr/io.h>
 #include <stdint.h>

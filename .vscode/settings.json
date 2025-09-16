@@ -4,6 +4,7 @@
         "stdio.h": "c",
         "stdint.h": "c",
         "io.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "echo.h": "c"
     }
 }
