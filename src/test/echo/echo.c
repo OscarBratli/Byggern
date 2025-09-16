@@ -2,8 +2,6 @@
 
 void test_echo(void)
 {
-    uart_init(MYUBRR);
-
     printf("Startup OK\r\n");
 
     while (1)

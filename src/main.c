@@ -2,14 +2,15 @@
 #include <stdlib.h>
 #include "uart/uart.h"
 
-#include "test/echo/echo.h"
+#include "test/sram/sram.h"
+// #include "test/echo/echo.h"
 
 void setup(void) {
     uart_init(MYUBRR);
+    test_sram();
 }
 
 void loop(void) {
-    test_echo();
 }
 
 int main(void)

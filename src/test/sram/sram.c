@@ -2,8 +2,6 @@
 
 void test_sram(void)
 {
-    uart_init(MYUBRR);
-
     volatile char *ext_ram = (char *)0x1800; // Start address for the SRAM
     uint16_t ext_ram_size = 0x800;
     uint16_t write_errors = 0;
