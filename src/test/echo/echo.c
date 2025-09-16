@@ -10,7 +10,8 @@ void test_echo(void)
 
         printf("You typed: %c\r\n", c);
 
-        if (c == 'q') {
+        if (c == 'q')
+        {
             break;
         }
     }
