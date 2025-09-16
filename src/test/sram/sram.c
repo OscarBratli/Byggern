@@ -1,6 +1,12 @@
 #include "sram.h"
 
-void test_sram(void)
+void sram_test_setup(void)
+{
+    uart_init(MYUBRR);
+    printf("Startup OK\r\n");
+}
+
+void sram_test_loop(void)
 {
     volatile char *ext_ram = (char *)0x1800; // Start address for the SRAM
     uint16_t ext_ram_size = 0x800;

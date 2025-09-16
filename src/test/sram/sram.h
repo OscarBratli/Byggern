@@ -4,4 +4,5 @@
 #include <stdlib.h>
 #include "uart/uart.h"
 
-void test_sram(void);
+void sram_test_setup(void);
+void sram_test_loop(void);

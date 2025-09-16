@@ -1,9 +1,13 @@
 #include "echo.h"
 
-void test_echo(void)
+void echo_test_setup(void)
 {
+    uart_init(MYUBRR);
     printf("Startup OK\r\n");
+}
 
+void echo_test_loop(void)
+{
     while (1)
     {
         char c = getchar();
