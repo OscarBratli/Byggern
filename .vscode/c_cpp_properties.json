@@ -4,6 +4,9 @@
             "name": "Linux",
             "includePath": [
                 "/usr/lib/avr/include",
+                "/usr/lib/avr/include/**",
+                "/usr/lib/avr/include/avr",
+                "/usr/lib/avr/include/avr/**",
                 "${workspaceFolder}/**",
                 "${workspaceFolder}/src",
                 "${workspaceFolder}/src/**"
