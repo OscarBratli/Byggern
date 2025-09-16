@@ -6,7 +6,7 @@
 #pragma once
 
 // Clock speed of the MCU (in Hz)
-#define FOSC 4915200
+#define F_CPU 4915200UL
 
 // bit manipulation for pin in/out
 #define set_bit(reg, bit) (reg |= (1 << bit))

@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <avr/interrupt.h>
 
-// RX globals (still available if you want interrupt-driven RX)
+// RX globals 
 volatile unsigned char uart_rx_data = 0;
 volatile uint8_t uart_rx_flag = 0;
 
