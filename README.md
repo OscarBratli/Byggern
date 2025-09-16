@@ -22,6 +22,16 @@ make
 make flash
 ```
 
+## Serial port
+
+### Ubuntu
+
+Run the following command, where `/dev/ttyS0` is the device and `9600` is the baud rate in a terminal to open the serial communication
+
+```
+sudo screen /dev/ttyS0 9600
+```
+
 ## Specify microcontroller
 
 ### IDE
