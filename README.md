@@ -1,13 +1,40 @@
 # Byggern
+
 File Repositry for Byggern Course at NTNU
-Here is how the branching and forking should be done, to ensure a clean repositry 
+Here is how the branching and forking should be done, to ensure a clean repositry
 
 ## Installation
 
-Clone openocd repo:
+The steps below are explained in more detail in page 22 of the [lab manual](lab_manual.pdf)
+
+### Install compiler
 
 ```
+sudo apt install gcc-arm-none-eabi
+```
 
+### Install prerequisites for a newer version of openocd
+
+```
+sudo apt install libusb-dev libusb-1.0-0-dev libusb-1.0-0
+```
+
+### Install Open-jtag dependencies
+
+```
+sudo apt install libhidapi-dev libftdi-dev libftdi1-dev
+```
+
+### Install and build openocd
+
+```
+git clone https://git.code.sf.net/p/openocd/code openocd
+cd openocd
+./bootstrap
+mkdir build; cd build
+../configure --enable-cmsis-dap --enable-openjtag --prefix=/opt/openocd
+make
+make install
 ```
 
 ## Build project
