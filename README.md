@@ -42,7 +42,7 @@ cd openocd
 mkdir build; cd build
 ../configure --enable-cmsis-dap --enable-openjtag --prefix=/opt/openocd
 make
-make install
+sudo make install
 ```
 
 ## Build project
