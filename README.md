@@ -25,6 +25,14 @@ sudo apt install libusb-dev libusb-1.0-0-dev libusb-1.0-0
 sudo apt install libhidapi-dev libftdi-dev libftdi1-dev
 ```
 
+### Install additional dependencies
+
+These are likely required for building openocd on Ubuntu in WSL
+
+```
+sudo apt install pkg-config libjim-dev
+```
+
 ### Install and build openocd
 
 ```
