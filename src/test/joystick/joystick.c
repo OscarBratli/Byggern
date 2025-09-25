@@ -14,6 +14,14 @@ void joystick_test_setup(void)
 
 void joystick_test_loop(void)
 {
+    printf("Calibrating...\r\n");
+    joystick_memory_calibrate_blocking(&joy, 5000, 1.1);
+    printf("Calibration complete.\r\n");
+    _delay_ms(1000);
+
+    printf("Starting joystick read loop...\r\n");
+    _delay_ms(1000);
+
     while (1)
     {
         joystick_memory_update(&joy);
