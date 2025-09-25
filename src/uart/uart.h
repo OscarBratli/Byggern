@@ -3,10 +3,10 @@
 #include <stdio.h>
 #include <avr/io.h>
 #include <stdint.h>
+#include "utils/utils.h"
 #include <avr/interrupt.h>
 
 // === UART config ===
-#define F_CPU 4915200UL
 #define BAUD 9600
 #define MYUBRR (F_CPU / 16 / BAUD - 1)
 
