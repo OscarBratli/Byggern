@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "uart/uart.h"
+#include "cpu_time/cpu_time.h"
 
 #include "test/sram/sram.h"
 #include "test/echo/echo.h"
@@ -19,6 +20,7 @@ void loop(void)
 
 int main(void)
 {
+    cpu_time_init();
     setup();
 
     while (1)
