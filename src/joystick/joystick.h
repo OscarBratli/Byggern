@@ -78,7 +78,7 @@ void joystick_update(Joystick *j, float value_x, float value_y);
  * The update function must be called in between calls to this function to update the joystick position.
  * @param j Pointer to the Joystick struct to calibrate.
  * @param duration The duration in milliseconds over which to sample the joystick position.
- * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 0.1 increases the deadzone by 10%.
+ * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
  * @return true if calibration is still in progress, false if calibration is complete.
  */
 bool joystick_calibrate(Joystick *j, long duration, float margin);
@@ -89,7 +89,7 @@ bool joystick_calibrate(Joystick *j, long duration, float margin);
  * This function blocks until calibration is complete.
  * @param j Pointer to the MemoryJoystick struct to calibrate.
  * @param duration The duration in milliseconds over which to sample the joystick position.
- * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 0.1 increases the deadzone by 10%.
+ * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
  */
 void joystick_memory_calibrate_blocking(MemoryJoystick *j, long duration, float margin);
 
@@ -99,7 +99,7 @@ void joystick_memory_calibrate_blocking(MemoryJoystick *j, long duration, float 
  * This function blocks until calibration is complete.
  * @param j Pointer to the PinJoystick struct to calibrate.
  * @param duration The duration in milliseconds over which to sample the joystick position.
- * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 0.1 increases the deadzone by 10%.
+ * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
  */
 void joystick_pin_calibrate_blocking(PinJoystick *j, long duration, float margin);
 
