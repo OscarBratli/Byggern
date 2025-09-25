@@ -1,13 +1,14 @@
 #include "joystick.h"
 
-int *joy_x_reg = (int *)0x100; // Example memory-mapped register address for X axis
-int *joy_y_reg = (int *)0x101; // Example memory-mapped register address for Y axis
+static int *joy_x_reg = (int *)0x100; // Example memory-mapped register address for X axis
+static int *joy_y_reg = (int *)0x101; // Example memory-mapped register address for Y axis
 
-MemoryJoystick joy = joystick_memory_create(joy_x_reg, joy_y_reg, 1023, 1023, (Vec2){0.1, 0.1});
+static MemoryJoystick joy;
 
 void joystick_test_setup(void)
 {
     uart_init(MYUBRR);
+    joystick_memory_create(joy_x_reg, joy_y_reg, 1023, 1023, (Vec2){0.1, 0.1});
     printf("Startup OK\r\n");
 }
 
