@@ -33,6 +33,12 @@ These are likely required for building openocd on Ubuntu in WSL
 sudo apt install pkg-config libjim-dev
 ```
 
+### Install avr toolchain
+
+```
+sudo apt install gcc-avr binutils-avr avr-libc
+```
+
 ### Install and build openocd
 
 ```
