@@ -8,6 +8,7 @@
 
 typedef struct
 {
+    Vec2 rest_pos;
     Vec2 deadzone;
     Vec2 position;
     Vec2 raw_position;
@@ -39,7 +40,13 @@ typedef union
     };
 } MemoryJoystick;
 
-Joystick joystick_create(Vec2 deadzone);
+/**
+ * Creates a basic joystick that can be updated manually.
+ * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
+ * @param deadzone The deadzone for the joystick, where the joystick is considered to be at rest.
+ * @return A Joystick struct representing the joystick.
+ */
+Joystick joystick_create(Vec2 rest_pos, Vec2 deadzone);
 
 /**
  * Creates a joystick that reads from analog pins.
@@ -47,10 +54,11 @@ Joystick joystick_create(Vec2 deadzone);
  * @param y_pin The pin number for the Y axis.
  * @param scale_min The value read from the analog pin that represents the minimum joystick output.
  * @param scale_max The value read from the analog pin that represents the maximum joystick output.
+ * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
  * @param deadzone The deadzone for the joystick, where the joystick is considered to be at rest.
  * @return A PinJoystick struct representing the joystick.
  */
-PinJoystick joystick_pin_create(int x_pin, int y_pin, int scale_min, int scale_max, Vec2 deadzone);
+PinJoystick joystick_pin_create(int x_pin, int y_pin, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone);
 
 /**
  * Creates a joystick that reads from memory-mapped registers.
@@ -58,10 +66,11 @@ PinJoystick joystick_pin_create(int x_pin, int y_pin, int scale_min, int scale_m
  * @param y_reg The memory address for the Y axis.
  * @param scale_min The value read from the register that represents the minimum joystick output.
  * @param scale_max The value read from the register that represents the maximum joystick output.
+ * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
  * @param deadzone The deadzone for the joystick, where the joystick is considered to be at rest.
  * @return A MemoryJoystick struct representing the joystick.
  */
-MemoryJoystick joystick_memory_create(int *x_reg, int *y_reg, int scale_min, int scale_max, Vec2 deadzone);
+MemoryJoystick joystick_memory_create(int *x_reg, int *y_reg, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone);
 
 /**
  * Updates the joystick position based on raw input values, applying deadzone compensation.

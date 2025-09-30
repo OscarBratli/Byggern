@@ -8,7 +8,7 @@ static MemoryJoystick joy;
 void joystick_test_setup(void)
 {
     uart_init(MYUBRR);
-    joystick_memory_create(joy_x_reg, joy_y_reg, 1023, 1023, (Vec2){0.1, 0.1});
+    joystick_memory_create(joy_x_reg, joy_y_reg, 0, 1023, (Vec2){0, 0}, (Vec2){0.1, 0.1});
     printf("Startup OK\r\n");
 }
 
