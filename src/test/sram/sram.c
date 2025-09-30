@@ -1,7 +1,20 @@
 #include "sram.h"
 
+// === UART config ===
+#define F_CPU 4915200UL  // 4.9152 MHz crystal atmega162
+#define BAUD 9600       // 9600 baud rate 
+#define MYUBRR (F_CPU / 16 / BAUD - 1) //Calculate MYUBRR value for given F_CPU and BAUD rate should be 31 for 4.9152MHz and 9600 baud rate
+
+
+
+void xmem_init ( void ) {
+MCUCR |= (1 << SRE ) ; // enable XMEM
+SFIOR |= (1 << XMM2 ) ; // mask bits / reduce bus width
+}
+
 void sram_test_setup(void)
 {
+    xmem_init();
     uart_init(MYUBRR);
     printf("Startup OK\r\n");
 }
@@ -27,6 +40,10 @@ void sram_test_loop(void)
         {
             printf("Write phase error: ext_ram[%4d] = %02X (should be %02X)\r\n", i, retreived_value, some_value);
             write_errors++;
+        }
+        else
+        {
+            printf("ext_ram[%4d] = %02X\r\n", i, retreived_value);
         }
     }
     // Retrieval phase: Check that no values were changed during or after the write phase
