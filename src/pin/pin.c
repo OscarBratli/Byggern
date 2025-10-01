@@ -32,6 +32,7 @@ void pin_analog_setup(int pin, enum PinMode mode)
     }
     else if (mode == PIN_MODE_INPUT)
     {
+        adc_init();
         printf("Setting pin %d as INPUT\n", pin);
     }
 }
@@ -44,6 +45,5 @@ bool pin_analog_write(int pin, int value)
 
 int pin_analog_read(int pin)
 {
-    printf("Reading value from pin %d\n", pin);
-    return 0;
+    return adc_read(pin);
 }

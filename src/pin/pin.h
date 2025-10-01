@@ -1,6 +1,7 @@
 #pragma once
 #include <stdio.h>
 #include <stdbool.h>
+#include "adc/adc.h"
 
 enum PinMode
 {
