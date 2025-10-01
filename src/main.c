@@ -19,16 +19,16 @@
 void setup(void)
 {
     // sram_test_setup();
-    // echo_test_setup();
-    // joystick_test_setup();
+    //echo_test_setup();
+    //joystick_test_setup();
     adc_test_setup();
 }
 
 void loop(void)
 {
-    // sram_test_loop();
+     //sram_test_loop();
     // echo_test_loop();
-    // joystick_test_loop();
+    //joystick_test_loop();
     adc_test_loop();
 }
 
