@@ -3,6 +3,8 @@
 File Repository for Byggern Course at NTNU
 Here is how the branching and forking should be done, to ensure a clean repository
 
+[wiring_tables.md](wiring_tables.md) contains lists of the pin connections.
+
 ## Installation
 
 The steps below are explained in more detail in page 22 of the [lab manual](lab_manual.pdf)
