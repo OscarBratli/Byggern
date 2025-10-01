@@ -16,7 +16,6 @@
 
 
 
-
 void setup(void)
 {
     // sram_test_setup();
@@ -35,13 +34,12 @@ void loop(void)
 
 int main(void)
 {
-    cpu_time_init();
+    //cpu_time_init();
     setup();
-
+    //loop();
     while (1)
     {
-        loop();
+         loop();
     }
-
-    return 0;
+    return 0;  
 }
