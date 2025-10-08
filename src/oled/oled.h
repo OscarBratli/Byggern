@@ -1,5 +1,4 @@
-#ifndef OLED_H
-#define OLED_H
+#pragma once
 
 #include <avr/io.h>
 #include <stdint.h>
@@ -14,5 +13,3 @@ void oled_write_data(uint8_t data);
 void oled_write_char(char c);
 void oled_print(const char *str);
 void oled_set_brightness(uint8_t level);
-
-#endif
