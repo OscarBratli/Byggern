@@ -127,17 +127,17 @@ void joystick_pin_calibrate_blocking(PinJoystick *j, long duration, float margin
 
 void joystick_pin_setup(PinJoystick *j)
 {
-    //pin_analog_setup(j->x_pin, PIN_MODE_INPUT);
-    //pin_analog_setup(j->y_pin, PIN_MODE_INPUT);
+    pin_analog_setup(j->x_pin, PIN_MODE_INPUT);
+    pin_analog_setup(j->y_pin, PIN_MODE_INPUT);
 }
 
 void joystick_pin_update(PinJoystick *j)
 {
 
-    //joystick_update(
-     //   &j->joystick,
-        //scale(pin_analog_read(j->x_pin), j->scale_min, j->scale_max, -1.0, 1.0),
-        //scale(pin_analog_read(j->y_pin), j->scale_min, j->scale_max, -1.0, 1.0))
+    joystick_update(
+        &j->joystick,
+        scale(pin_analog_read(j->x_pin), j->scale_min, j->scale_max, -1.0, 1.0),
+        scale(pin_analog_read(j->y_pin), j->scale_min, j->scale_max, -1.0, 1.0));
 }
 
 void joystick_memory_update(MemoryJoystick *j)

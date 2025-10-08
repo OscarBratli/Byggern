@@ -2,8 +2,9 @@
 
 void sram_test_setup(void)
 {
-    // Don't call uart_init here - it's already called in main
-    printf("SRAM test setup OK\r\n");
+    xmem_init();
+    uart_init(MYUBRR);
+    printf("Startup OK\r\n");
 }
 
 void sram_test_loop(void)
