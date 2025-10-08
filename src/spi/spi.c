@@ -47,8 +47,9 @@ void oled_set_data_mode(void)
 
 void oled_reset_pulse(void)
 {
-    PORTD &= ~(1 << OLED_RES);
-    _delay_ms(10);
-    PORTD |= (1 << OLED_RES);
-    _delay_ms(10);
+    DDRD |= (1 << PD5);         // Ensure PD5 is output
+    PORTD &= ~(1 << PD5);       // Pull low
+    _delay_ms(20);              // Hold low
+    PORTD |= (1 << PD5);        // Release high
+    _delay_ms(20);              // Wait after release
 }
