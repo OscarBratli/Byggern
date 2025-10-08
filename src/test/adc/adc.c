@@ -18,5 +18,5 @@ void adc_test_loop(void)
            adc0_value, adc1_value,
            adc2_value, adc3_value);
 
-    _delay_ms(100);
+    _delay_ms(10);
 }
