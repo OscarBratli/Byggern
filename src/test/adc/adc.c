@@ -14,7 +14,7 @@ void adc_test_loop(void)
     int adc2_value = adc_read(2); // Read from ADC channel 2
     int adc3_value = adc_read(3); // Read from ADC channel 3
 
-    printf("ADC Readings - Joystick X: %d, Joystick Y: %d, Slider X: %d, Slider Y: %d\r\n",
+    printf("ADC Readings - Joystick X: %03d, Joystick Y: %03d, Slider X: %03d, Slider Y: %03d\r\n",
            adc0_value, adc1_value,
            adc2_value, adc3_value);
 
