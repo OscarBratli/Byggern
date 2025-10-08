@@ -1,8 +1,4 @@
 #include "oled.h"
-#include "spi.h"
-#include <util/delay.h>
-#include "fonts.h"  // optional: font8[96][8] from lab file
-#include <avr/pgmspace.h>
 
 void oled_init(void)
 {

@@ -2,6 +2,11 @@
 
 #include <avr/io.h>
 #include <stdint.h>
+#include "spi/spi.h"
+#include "utils/utils.h"
+#include <util/delay.h>
+#include "fonts/fonts.h"
+#include <avr/pgmspace.h>
 
 void oled_init(void);
 void oled_clear(void);
