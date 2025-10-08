@@ -75,6 +75,20 @@ Run the following command, where `/dev/ttyS0` is the device and `9600` is the ba
 sudo screen /dev/ttyS0 9600
 ```
 
+#### Kill serial port
+
+If the serial port is started with the command above, there is a chance it was not gracefully shut down, and the screen instance is still watching the port. This might interfere with the operation of the serial port and data may be lost. To fix this, check if there are any applications currently using the serial port using this command.
+
+```
+sudo lsof /dev/ttyS0
+```
+
+And kill the applications listed.
+
+```
+sudo pkill screen
+```
+
 ## Specify microcontroller
 
 ### IDE
