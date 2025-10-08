@@ -6,6 +6,7 @@
 #include "test/adc/adc.h"
 #include "test/sram/sram.h"
 #include "test/echo/echo.h"
+#include "test/oled/oled.h"
 #include "test/joystick/joystick.h"
 
 void setup(void)
@@ -13,7 +14,8 @@ void setup(void)
     // sram_test_setup();
     // echo_test_setup();
     // joystick_test_setup();
-    adc_test_setup();
+    // adc_test_setup();
+    oled_test_setup();
 }
 
 void loop(void)
@@ -21,7 +23,8 @@ void loop(void)
     // sram_test_loop();
     // echo_test_loop();
     // joystick_test_loop();
-    adc_test_loop();
+    // adc_test_loop();
+    oled_test_loop();
 }
 
 int main(void)
