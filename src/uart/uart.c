@@ -35,7 +35,6 @@ void uart_transmit(unsigned char data)
 
 int uart_putchar(char c, FILE *stream)
 {
-
     uart_transmit(c);
     return 0;
 }
