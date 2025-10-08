@@ -9,8 +9,14 @@ void adc_test_setup(void)
 
 void adc_test_loop(void)
 {
-    int adc0_value = adc_read(0);  // Read from ADC channel 0
-    int adc2_value = adc_read(1); // Read from ADC channel 1
-    printf("ADC Value: %.3d, %.3d\r\n", adc0_value, adc2_value);
+    int adc0_value = adc_read(0); // Read from ADC channel 0
+    int adc1_value = adc_read(1); // Read from ADC channel 1
+    int adc2_value = adc_read(2); // Read from ADC channel 2
+    int adc3_value = adc_read(3); // Read from ADC channel 3
+
+    printf("ADC Readings - Joystick X: %d, Joystick Y: %d, Slider X: %d, Slider Y: %d\r\n",
+           adc0_value, adc1_value,
+           adc2_value, adc3_value);
+
     _delay_ms(100);
 }
