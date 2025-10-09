@@ -3,15 +3,18 @@
 
 void spi_init(void)
 {
-    // SPI lines
-    DDRB |= (1 << SPI_MOSI) | (1 << SPI_SCK) | (1 << SPI_SS);
-    DDRB &= ~(1 << SPI_MISO);
-    PORTB |= (1 << SPI_SS); // deselect (active low)
+    // SPI lines - matching your wiring
+    DDRB |= (1 << SPI_MOSI) | (1 << SPI_SCK) | (1 << SPI_SS);  // PB5, PB7, PB4 as outputs
+    DDRB &= ~(1 << SPI_MISO);  // PB6 as input
+    PORTB |= (1 << SPI_SS);    // IO_CS high (deselected)
 
-    // OLED control lines
-    DDRD |= (1 << OLED_DC) | (1 << OLED_RES);
-    PORTD |= (1 << OLED_RES); // keep high (inactive)
-    PORTD |= (1 << OLED_DC);  // default to data mode
+    // OLED control lines - matching your wiring  
+    DDRB |= (1 << OLED_DC) | (1 << OLED_CS);  // PB2 (DC), PB3 (CS) as outputs
+    DDRD |= (1 << OLED_RES);                  // PD5 (RES) as output
+    
+    PORTB |= (1 << OLED_CS);   // OLED CS high (deselected)
+    PORTD |= (1 << OLED_RES);  // OLED RES high (not in reset)
+    PORTB |= (1 << OLED_DC);   // OLED DC high (data mode)
 
     // Enable SPI: master mode, fosc/16, mode 0
     SPCR = (1 << SPE) | (1 << MSTR) | (1 << SPR0);
