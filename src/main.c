@@ -1,36 +1,23 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include "uart/uart.h"
+#include <util/delay.h>
 #include "cpu_time/cpu_time.h"
-
-#include "test/adc/adc.h"
-#include "test/sram/sram.h"
-//#include "test/echo/echo.h"
-//#include "test/oled/oled.h"
-#include "test/joystick/joystick.h"
 #include "spi/spi.h"
+#include "oled/oled.h"
 
 void setup(void)
 {
-    sram_test_setup();
-    // echo_test_setup();
-    // joystick_test_setup();
-    // adc_test_setup();
-    //oled_test_setup();
-     spi_setup();
- 
-   
+    // Initialize SPI for OLED communication
+    spi_setup();
+    
+    // Initialize OLED and display hello world
+    oled_init();
+    oled_clear_screen();
+    oled_print_string("Hello World!", 24, 3);  // Centered on screen
 }
 
 void loop(void)
 {
-    spi_loop();
-    //sram_test_loop();
-    // echo_test_loop();
-    // joystick_test_loop();
-    // adc_test_loop();
-    //oled_test_loop();
-    
+    // Main loop - Hello World stays displayed
+    _delay_ms(1000);
 }
 
 int main(void)
