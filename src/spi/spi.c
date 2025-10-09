@@ -1,58 +1,102 @@
 #include "spi.h"
 #include <util/delay.h>
+#include "uart/uart.h"
+#include "cpu_time/cpu_time.h"
 
-void spi_init(void)
+
+// USE SPI Mode 0
+// Modes to decide clock polarity and phase
+// Mode 0: CPOL = 0, CPHA = 0      <---- SPI MODE ==== SPI MODE 0
+
+
+
+
+void SPI_MasterInit(void)
 {
-    // SPI lines - matching your wiring
-    DDRB |= (1 << SPI_MOSI) | (1 << SPI_SCK) | (1 << SPI_SS);  // PB5, PB7, PB4 as outputs
-    DDRB &= ~(1 << SPI_MISO);  // PB6 as input
-    PORTB |= (1 << SPI_SS);    // IO_CS high (deselected)
+/* Set MOSI and SCK output, all others input */
+DDRB = (1<<SPI_MOSI)|(1<<SPI_SCK);
 
-    // OLED control lines - matching your wiring  
-    DDRB |= (1 << OLED_DC) | (1 << OLED_CS);  // PB2 (DC), PB3 (CS) as outputs
-    DDRD |= (1 << OLED_RES);                  // PD5 (RES) as output
+/* Enable SPI, Master, set clock rate fck/16, Mode 0 (CPOL=0, CPHA=0) */
+SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0);  // CPOL=0, CPHA=0 (bits default to 0)
+
+
+// Explicitly ensure CPOL=0 and CPHA=0 for SPI Mode 0
+SPCR &= ~(1<<CPOL);  // Clear CPOL bit (Clock Polarity = 0)
+SPCR &= ~(1<<CPHA);  // Clear CPHA bit (Clock Phase = 0)
+}
+
+
+void SPI_MasterTransmit(char cData)
+{
+/* Start transmission */
+SPDR = cData;
+/* Wait for transmission complete */
+while(!(SPSR & (1<<SPIF)))
+;
+}
+
+void SPI_SlaveInit(void)
+{
+/* Set MISO output, all others input */
+DDRB = (1<<SPI_MISO);
+/* Enable SPI */
+SPCR = (1<<SPE);
+}
+
+char SPI_SlaveReceive(void)
+{
+/* Wait for reception complete */
+while(!(SPSR & (1<<SPIF)))
+;
+/* Return data register */
+return SPDR;
+}
+
+
+
+
+
+// SPI Setup Function (call once during initialization)
+void spi_setup(void) 
+{
+    uart_init(MYUBRR);
+    printf("SPI Test Starting...\r\n");
     
-    PORTB |= (1 << OLED_CS);   // OLED CS high (deselected)
-    PORTD |= (1 << OLED_RES);  // OLED RES high (not in reset)
-    PORTB |= (1 << OLED_DC);   // OLED DC high (data mode)
+    // Initialize SPI
+    SPI_MasterInit();
+    
+    // Set MOSI, SCK, and a CS pin as outputs for testing
+    DDRB |= (1 << SPI_MOSI) | (1 << SPI_SCK) | (1 << SPI_SS);  // MOSI, SCK, CS
+    PORTB |= (1 << SPI_SS);  // CS high (deselected)
 
-    // Enable SPI: master mode, fosc/16, mode 0
-    SPCR = (1 << SPE) | (1 << MSTR) | (1 << SPR0);
 }
 
-void spi_select(void)
+// SPI Loop Function (call repeatedly in main loop)
+void spi_loop(void)
 {
-    PORTB &= ~(1 << SPI_SS);
-}
+    
+    // Select device (CS low)
+    PORTB &= ~(1 << PB3);
+    _delay_us(10);
+    
+    // Send test pattern: 0x55 (01010101) - easy to see on scope
+    printf("Sending 0x55...\r\n");
+    SPI_MasterTransmit(0x55);
+    _delay_ms(900);
+    
+    // Send test pattern: 0xAA (10101010) - opposite pattern  
+    SPI_MasterTransmit(0xAA);
+    _delay_ms(900);
 
-void spi_deselect(void)
-{
-    PORTB |= (1 << SPI_SS);
-}
+    // Send test pattern: 0xFF (11111111) - all high
+    SPI_MasterTransmit(0xFF);
+    _delay_ms(900);
 
-uint8_t spi_transfer(uint8_t data)
-{
-    SPDR = data;
-    while (!(SPSR & (1 << SPIF)));
-    return SPDR;
-}
-
-// === OLED helper control lines ===
-void oled_set_command_mode(void)
-{
-    PORTD &= ~(1 << OLED_DC);
-}
-
-void oled_set_data_mode(void)
-{
-    PORTD |= (1 << OLED_DC);
-}
-
-void oled_reset_pulse(void)
-{
-    DDRD |= (1 << PD5);         // Ensure PD5 is output
-    PORTD &= ~(1 << PD5);       // Pull low
-    _delay_ms(20);              // Hold low
-    PORTD |= (1 << PD5);        // Release high
-    _delay_ms(20);              // Wait after release
-}
+    // Send test pattern: 0x00 (00000000) - all low
+    SPI_MasterTransmit(0x00);
+    _delay_ms(900);
+    
+    // Deselect device (CS high)
+     PORTB |= (1 << SPI_SS);
+    _delay_ms(500);
+} 

@@ -8,7 +8,7 @@
 #define SPI_MOSI PB5    // Pin 3 MOSI -> PB5 ✓
 #define SPI_MISO PB6    // Pin 4 MISO -> PB6 ✓  
 #define SPI_SCK  PB7    // Pin 5 SCK -> PB7 ✓
-#define SPI_SS   PB4    // Pin 2 IO_CS -> PB4 ✓
+#define SPI_SS   PB4    // Pin 2 IO_CS -> PB4 ✓ 
 
 // === OLED control pins - Matching your actual wiring ===
 #define OLED_DC   PB2   // Pin 0 (DISP_D/C) -> PB2 ✓
@@ -16,10 +16,15 @@
 #define OLED_RES  PD5   // Pin 6 (DISP_RES) -> PD5 ✓
 
 // === Public SPI functions ===
-void spi_init(void);
-void spi_select(void);
-void spi_deselect(void);
-uint8_t spi_transfer(uint8_t data);
+void SPI_MasterInit(void);
+void SPI_SlaveInit(void);
+void SPI_MasterTransmit(char cData); 
+char SPI_SlaveReceive(void); 
+void SPI_Select(void);
+void SPI_Deselect(void);
+uint8_t SPI_Transfer(uint8_t data);
+void spi_setup(void);  // SPI test setup (call once)
+void spi_loop(void);   // SPI test loop (call repeatedly)  
 
 // === OLED helpers for higher-level drivers ===
 void oled_set_command_mode(void);
