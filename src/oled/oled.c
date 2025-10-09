@@ -3,30 +3,21 @@
 void oled_init(void)
 {
     spi_init();
+    
+    // Reset the OLED display
     oled_reset_pulse();
+    _delay_ms(100);
 
+    // Minimal initialization - as per TA recommendation
     oled_set_command_mode();
-    spi_select();
-
-    // === SSD1309 initialization sequence ===
-    spi_transfer(0xAE); // Display OFF
-    spi_transfer(0xA1); // Segment remap
-    spi_transfer(0xC8); // COM scan direction
-    spi_transfer(0xA8); spi_transfer(0x3F); // Multiplex ratio 1/64
-    spi_transfer(0xD3); spi_transfer(0x00); // Display offset = 0
-    spi_transfer(0xD5); spi_transfer(0x80); // Clock divide
-    spi_transfer(0x81); spi_transfer(0x7F); // Contrast
-    spi_transfer(0xD9); spi_transfer(0xF1); // Precharge period
-    spi_transfer(0xDA); spi_transfer(0x12); // COM pins config
-    spi_transfer(0xDB); spi_transfer(0x40); // VCOMH deselect
-    spi_transfer(0x20); spi_transfer(0x00); // Horizontal addressing
-    spi_transfer(0x8D); spi_transfer(0x14); // Enable charge pump
-    spi_transfer(0xA4); // Resume from RAM
-    spi_transfer(0xA6); // Normal (not inverted)
-    spi_transfer(0xAF); // Display ON
-
-    spi_deselect();
-    _delay_ms(50);
+    oled_select();
+    
+    spi_transfer(0xA1);  // Segment remap (flip horizontally)
+    spi_transfer(0xC8);  // COM scan direction (flip vertically)  
+    spi_transfer(0xAF);  // Display ON
+    
+    oled_deselect();
+    _delay_ms(1000);   // Longer delay after initialization
 
     oled_clear();
     oled_home();
@@ -38,10 +29,10 @@ void oled_clear(void)
         oled_goto_line(page);
         oled_goto_column(0);
         oled_set_data_mode();
-        spi_select();
+        oled_select();  // Use OLED-specific select
         for (uint8_t col = 0; col < 128; col++)
             spi_transfer(0x00);
-        spi_deselect();
+        oled_deselect();  // Use OLED-specific deselect
     }
 }
 
@@ -53,9 +44,9 @@ void oled_home(void)
 void oled_goto_line(uint8_t line)
 {
     oled_set_command_mode();
-    spi_select();
+    oled_select();  // Use OLED-specific select
     spi_transfer(0xB0 | (line & 0x0F));  // Set page address
-    spi_deselect();
+    oled_deselect();  // Use OLED-specific deselect
 }
 
 void oled_goto_column(uint8_t col)
@@ -85,10 +76,10 @@ void oled_write_char(char c)
 {
     if (c < 32 || c > 127) return;
     oled_set_data_mode();
-    spi_select();
+    oled_select();  // Use OLED-specific select
     for (uint8_t i = 0; i < 8; i++)
         spi_transfer(pgm_read_byte(&font8[c - 32][i]));
-    spi_deselect();
+    oled_deselect();  // Use OLED-specific deselect
 }
 
 void oled_print(const char *str)
