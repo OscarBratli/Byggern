@@ -43,6 +43,8 @@ void oled_init(void) {
     // Set Page Mode (default and easiest according to lab manual)
     oled_write_command(OLED_MEMORYMODE);            // Set memory addressing mode
     oled_write_command(OLED_PAGE_MODE);             // Page addressing mode (0x10)
+
+    oled_clear_screen();                            // Clear screen on init 
 }
 
 // Set cursor position using Page Mode (lab manual recommendation)

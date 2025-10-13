@@ -64,4 +64,7 @@ void ioboard_led_pwm(uint8_t led_num, uint8_t brightness);
 uint8_t ioboard_spi_command(uint8_t command, uint8_t* data_buffer, uint8_t data_length);
 
 
+//TEST's
+
+void btn_test(void);
 #endif
