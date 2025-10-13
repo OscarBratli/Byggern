@@ -1,170 +1,141 @@
 #include "joystick.h"
+#include "adc/adc.h"
+#include <stdbool.h>
 
-Joystick joystick_create(Vec2 rest_pos, Vec2 deadzone)
+// Auto-calibration variables
+static struct {
+    uint16_t x_min, x_max;
+    uint16_t y_min, y_max;
+    bool initialized;
+} joystick_cal = {0};
+
+// Auto-calibration functions
+static void joystick_auto_calibrate(uint16_t adc_x, uint16_t adc_y)
 {
-    Joystick j;
-    j.rest_pos = rest_pos;
-    j.deadzone = deadzone;
-    return j;
-}
-
-PinJoystick joystick_pin_create(int x_pin, int y_pin, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone)
-{
-    PinJoystick j;
-    j.x_pin = x_pin;
-    j.y_pin = y_pin;
-    j.scale_min = scale_min;
-    j.scale_max = scale_max;
-    j.joystick.rest_pos = rest_pos;
-    j.joystick.deadzone = deadzone;
-    return j;
-}
-
-MemoryJoystick joystick_memory_create(int *x_reg, int *y_reg, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone)
-{
-    MemoryJoystick j;
-    j.x_reg = x_reg;
-    j.y_reg = y_reg;
-    j.scale_min = scale_min;
-    j.scale_max = scale_max;
-    j.joystick.rest_pos = rest_pos;
-    j.joystick.deadzone = deadzone;
-    return j;
-}
-
-void joystick_update(Joystick *j, float value_x, float value_y)
-{
-    j->raw_position.x = value_x;
-    j->raw_position.y = value_y;
-
-    // Apply deadzone
-    if (value_x > j->deadzone.x || value_x < -j->deadzone.x)
-    {
-        // Compensate for the deadzone gap
-        if (value_x >= j->rest_pos.x)
-        {
-            j->position.x = scale(value_x, j->rest_pos.x + j->deadzone.x, 1.0, 0.0, 1.0);
-        }
-        else
-        {
-            j->position.x = scale(value_x, -1.0, j->rest_pos.x - j->deadzone.x, -1.0, 0.0);
-        }
-    }
-    else
-    {
-        j->position.x = 0;
-    }
-
-    if (value_y > j->deadzone.y || value_y < -j->deadzone.y)
-    {
-        // Compensate for the deadzone gap
-        if (value_y >= j->rest_pos.y)
-        {
-            j->position.y = scale(value_y, j->rest_pos.y + j->deadzone.y, 1.0, 0.0, 1.0);
-        }
-        else
-        {
-            j->position.y = scale(value_y, -1.0, j->rest_pos.y - j->deadzone.y, -1.0, 0.0);
-        }
-    }
-    else
-    {
-        j->position.y = 0;
+    if (!joystick_cal.initialized) {
+        // First reading - initialize with current values
+        joystick_cal.x_min = joystick_cal.x_max = adc_x;
+        joystick_cal.y_min = joystick_cal.y_max = adc_y;
+        joystick_cal.initialized = true;
+    } else {
+        // Update min/max values
+        if (adc_x < joystick_cal.x_min) joystick_cal.x_min = adc_x;
+        if (adc_x > joystick_cal.x_max) joystick_cal.x_max = adc_x;
+        if (adc_y < joystick_cal.y_min) joystick_cal.y_min = adc_y;
+        if (adc_y > joystick_cal.y_max) joystick_cal.y_max = adc_y; 
     }
 }
 
-bool joystick_calibrate(Joystick *j, long duration, float margin)
+// Helper functions
+static uint8_t normalize_to_percentage(uint16_t adc_value, uint16_t min_val, uint16_t max_val)
 {
-    if (!j->calibrating)
-    {
-        j->calibrating = true;
-        j->calibration_start_time = cpu_time_milliseconds();
-        j->deadzone.x = 0.0;
-        j->deadzone.y = 0.0;
-        j->rest_pos = j->raw_position;
-    }
-    else
-    {
-
-        float error_x = abs(j->raw_position.x - j->rest_pos.x);
-        float error_y = abs(j->raw_position.y - j->rest_pos.y);
-
-        if (error_x > j->deadzone.x)
-        {
-            j->deadzone.x = error_x;
-        }
-        if (error_y > j->deadzone.y)
-        {
-            j->deadzone.y = error_y;
-        }
-
-        if (cpu_time_milliseconds() - j->calibration_start_time >= duration)
-        {
-            j->deadzone.x *= margin;
-            j->deadzone.y *= margin;
-            j->calibrating = false;
-        }
-    }
-
-    return j->calibrating;
+    // Clamp to valid range
+    if (adc_value <= min_val) return 0;
+    if (adc_value >= max_val) return 100;
+    
+    // Linear scaling from [min_val, max_val] to [0, 100]
+    uint32_t result = ((uint32_t)(adc_value - min_val) * 100) / (max_val - min_val);
+    
+    return (uint8_t)result;
 }
 
-void joystick_memory_calibrate_blocking(MemoryJoystick *j, long duration, float margin)
+static uint8_t normalize_to_byte(uint16_t adc_value, uint16_t min_val, uint16_t max_val)
 {
-    while (joystick_calibrate(&j->joystick, duration, margin))
-    {
-        joystick_memory_update(j);
-    }
+    // Clamp to valid range
+    if (adc_value <= min_val) return 0;
+    if (adc_value >= max_val) return 255;
+    
+    // Linear scaling from [min_val, max_val] to [0, 255]
+    uint32_t result = ((uint32_t)(adc_value - min_val) * 255) / (max_val - min_val);
+    
+    return (uint8_t)result;
 }
 
-void joystick_pin_calibrate_blocking(PinJoystick *j, long duration, float margin)
+joystick_pos_t joystick_get_position(void)
 {
-    while (joystick_calibrate(&j->joystick, duration, margin))
-    {
-        joystick_pin_update(j);
-    }
-}
-
-void joystick_pin_setup(PinJoystick *j)
-{
-    pin_analog_setup(j->x_pin, PIN_MODE_INPUT);
-    pin_analog_setup(j->y_pin, PIN_MODE_INPUT);
-}
-
-void joystick_pin_update(PinJoystick *j)
-{
-
-    joystick_update(
-        &j->joystick,
-        scale(pin_analog_read(j->x_pin), j->scale_min, j->scale_max, -1.0, 1.0),
-        scale(pin_analog_read(j->y_pin), j->scale_min, j->scale_max, -1.0, 1.0));
-}
-
-void joystick_memory_update(MemoryJoystick *j)
-{
-    joystick_update(
-        &j->joystick,
-        scale(*(j->x_reg), j->scale_min, j->scale_max, -1.0, 1.0),
-        scale(*(j->y_reg), j->scale_min, j->scale_max, -1.0, 1.0));
-}
-
-Vec2 joystick_get_position_centered(Joystick *j)
-{
-    return j->position;
-}
-
-Vec2 joystick_get_position_centered_x(Joystick *j)
-{
-    Vec2 pos;
-    pos.x = j->position.x;
-    pos.y = scale(j->position.y, -1.0, 1.0, 0.0, 1.0);
+    joystick_pos_t pos;
+    
+    // Read ADC values
+    uint16_t adc_x = adc_read(JOYSTICK_ADC_X_CHANNEL);  // A1
+    uint16_t adc_y = adc_read(JOYSTICK_ADC_Y_CHANNEL);  // A0
+    
+    // Auto-calibrate based on current readings
+    joystick_auto_calibrate(adc_x, adc_y);
+    
+    // Use calibrated values for normalization, with fallback to defaults
+    uint16_t x_min = joystick_cal.initialized ? joystick_cal.x_min : JOYSTICK_ADC_X_MIN;
+    uint16_t x_max = joystick_cal.initialized ? joystick_cal.x_max : JOYSTICK_ADC_X_MAX;
+    uint16_t y_min = joystick_cal.initialized ? joystick_cal.y_min : JOYSTICK_ADC_Y_MIN;
+    uint16_t y_max = joystick_cal.initialized ? joystick_cal.y_max : JOYSTICK_ADC_Y_MAX;
+    
+    // Normalize to 0 to 100% range using calibrated values
+    pos.x = normalize_to_percentage(adc_x, x_min, x_max);
+    pos.y = normalize_to_percentage(adc_y, y_min, y_max);
+    
+    // TODO: Add button reading if needed
+    pos.button = 0;
+    
     return pos;
 }
 
-Vec2 joystick_get_position_scaled(Joystick *j, float min_x, float max_x, float min_y, float max_y)
+slider_pos_t slider_get_position(void)
 {
-    Vec2 scaled_position;
-    scaled_position.x = scale(j->position.x, -1.0, 1.0, min_x, max_x);
-    scaled_position.y = scale(j->position.y, -1.0, 1.0, min_y, max_y);
-    return scaled_position;
+    slider_pos_t pos;
+    
+    // Read ADC values
+    uint16_t adc_x = adc_read(SLIDER_ADC_X_CHANNEL);  // A2
+    uint16_t adc_y = adc_read(SLIDER_ADC_Y_CHANNEL);  // A3
+    
+    // Normalize to 0-255 range
+    pos.x = normalize_to_byte(adc_x, SLIDER_ADC_X_MIN, SLIDER_ADC_X_MAX);
+    pos.y = normalize_to_byte(adc_y, SLIDER_ADC_Y_MIN, SLIDER_ADC_Y_MAX);
+    
+    return pos;
+}
+
+// Calibration management functions
+void joystick_reset_calibration(void)
+{
+    joystick_cal.initialized = false;
+}
+
+void joystick_get_calibration(uint16_t *x_min, uint16_t *x_max, uint16_t *y_min, uint16_t *y_max)
+{
+    if (joystick_cal.initialized) {
+        *x_min = joystick_cal.x_min;
+        *x_max = joystick_cal.x_max;
+        *y_min = joystick_cal.y_min;
+        *y_max = joystick_cal.y_max;
+    } else {
+        // Return default values if not calibrated yet
+        *x_min = JOYSTICK_ADC_X_MIN;
+        *x_max = JOYSTICK_ADC_X_MAX;
+        *y_min = JOYSTICK_ADC_Y_MIN;
+        *y_max = JOYSTICK_ADC_Y_MAX;
+    }
+}
+
+void display_joystick(void) {
+
+    // Get joystick and slider positions
+    joystick_pos_t joy_pos = joystick_get_position();
+    slider_pos_t slider_pos = slider_get_position();
+    
+    // Create strings for OLED display
+    char joy_str[20], slider_str[20];
+    snprintf(joy_str, sizeof(joy_str), "Joy: %u%%, %u%%", joy_pos.x, joy_pos.y);
+    snprintf(slider_str, sizeof(slider_str), "Slide: %u, %u", slider_pos.x, slider_pos.y);
+    
+    // Display on OLED
+    oled_clear_screen();
+    oled_print_string("Input Test", 0, 0);
+    oled_print_string(joy_str, 0, 2);
+    oled_print_string(slider_str, 0, 3);
+    
+    // Also send to serial for debugging
+    printf("Joystick: X=%u%%, Y=%u%% | Slider: X=%u, Y=%u\r\n", 
+           joy_pos.x, joy_pos.y, slider_pos.x, slider_pos.y);
+    
+    _delay_ms(100);  // Update every 100ms
+    
 }

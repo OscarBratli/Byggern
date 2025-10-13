@@ -211,6 +211,95 @@ The OLED communicates via **SPI Mode 0**:
 - **MSB first** data transmission
 - **Clock rate**: fck/16 (configurable)
 
+## Joystick and Slider Driver
+
+This project includes a calibrated joystick and touchpad slider driver that converts ADC readings to normalized position values.
+
+### Hardware Configuration
+
+**ADC Channels:**
+- `A0` - Joystick Y axis
+- `A1` - Joystick X axis  
+- `A2` - Touchpad X axis
+- `A3` - Touchpad Y axis
+
+### Calibration Data and Voltage-ADC Relationships
+
+Based on measured voltages and corresponding ADC values:
+
+#### Joystick Y Axis (A0)
+```
+Center: 2.472V → ADC 160
+Range:  1.165V - 3.857V → ADC 80 - 240
+Formula: ADC = (Voltage - 1.165) × (160)/(2.692) + 80
+Linear relationship: ~59.4 ADC units per volt
+```
+
+#### Joystick X Axis (A1)  
+```
+Center: 2.505V → ADC 160
+Range:  0.934V - 4.080V → ADC 61 - 251  
+Formula: ADC = (Voltage - 0.934) × (190)/(3.146) + 61
+Linear relationship: ~60.4 ADC units per volt
+```
+
+#### Touchpad X Axis (A2)
+```
+Center: 2.505V → ADC 159
+Range:  0.128V - 4.967V → ADC 7 - 255
+Formula: ADC = (Voltage - 0.128) × (248)/(4.839) + 7
+Linear relationship: ~51.3 ADC units per volt
+```
+
+#### Touchpad Y Axis (A3)
+```
+Center: 2.850V → ADC 181  
+Range:  0.012V - 4.967V → ADC 0 - 255
+Formula: ADC = (Voltage - 0.012) × (255)/(4.955) + 0
+Linear relationship: ~51.5 ADC units per volt
+```
+
+### Driver Features
+
+**Joystick (`joystick_pos_t`):**
+- **Normalized output**: -100 to +100 for each axis
+- **Deadzone**: ±5 ADC units around center (eliminates jitter)
+- **Center calibration**: Auto-centers at measured center points
+- **Button support**: Ready for future button implementation
+
+**Touchpad (`slider_pos_t`):**
+- **Full range output**: 0 to 255 for each axis
+- **Touch detection**: Automatic detection when touchpad is being used
+- **Edge handling**: Proper clamping at min/max values
+
+### Usage Example
+
+```c
+#include "joystick_driver/joystick_driver.h"
+
+// Initialize
+joystick_driver_init();
+
+// Read joystick position
+joystick_pos_t joy = joystick_get_position();
+printf("Joystick: X=%d, Y=%d\n", joy.x, joy.y);  // -100 to +100
+
+// Read touchpad position  
+slider_pos_t slider = slider_get_position();
+printf("Touchpad: X=%d, Y=%d, Touched=%d\n", 
+       slider.x, slider.y, slider.touched);  // 0 to 255
+```
+
+### Calibration Constants
+
+All calibration values are defined in `joystick_driver.h`:
+```c
+#define JOYSTICK_X_CENTER   160     // Measured center point
+#define JOYSTICK_Y_CENTER   160     
+#define JOYSTICK_DEADZONE   5       // Deadzone radius
+// ... (see header file for complete calibration data)
+```
+
 ## Specify microcontroller
 
 ### IDE

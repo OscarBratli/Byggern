@@ -1,156 +1,52 @@
 #pragma once
-#include <stdio.h>
-#include <stdbool.h>
-#include "pin/pin.h"
-#include "vec2/vec2.h"
-#include "scale/scale.h"
-#include "cpu_time/cpu_time.h"
+#include <stdint.h>
 
-typedef struct
-{
-    Vec2 rest_pos;
-    Vec2 deadzone;
-    Vec2 position;
-    Vec2 raw_position;
-    bool calibrating;
-    long calibration_start_time;
-} Joystick;
+// ADC channel assignments
+#define JOYSTICK_ADC_X_CHANNEL  1       // A1 - Joystick X axis
+#define JOYSTICK_ADC_Y_CHANNEL  0       // A0 - Joystick Y axis  
+#define SLIDER_ADC_X_CHANNEL    2       // A2 - Slider X axis
+#define SLIDER_ADC_Y_CHANNEL    3       // A3 - Slider Y axis
 
-typedef union
-{
-    Joystick joystick;
-    struct
-    {
-        int x_pin;
-        int y_pin;
-        int scale_min;
-        int scale_max;
-    };
-} PinJoystick;
+// Joystick calibration values (from voltage measurements)
+#define JOYSTICK_ADC_X_MIN      59      // Minimum ADC value for X
+#define JOYSTICK_ADC_X_MAX      250     // Maximum ADC value for X  
+#define JOYSTICK_ADC_Y_MIN      74      // Minimum ADC value for Y
+#define JOYSTICK_ADC_Y_MAX      238     // Maximum ADC value for Y
 
-typedef union
-{
-    Joystick joystick;
-    struct
-    {
-        int *x_reg;
-        int *y_reg;
-        int scale_min;
-        int scale_max;
-    };
-} MemoryJoystick;
+// Slider/Touchpad calibration values
+#define SLIDER_ADC_X_MIN        0       // Minimum ADC value for slider X
+#define SLIDER_ADC_X_MAX        255     // Maximum ADC value for slider X
+#define SLIDER_ADC_Y_MIN        0       // Minimum ADC value for slider Y  
+#define SLIDER_ADC_Y_MAX        255     // Maximum ADC value for slider Y
+
+// Position structures
+typedef struct {
+    uint8_t x;          // X position (0 to 100%)
+    uint8_t y;          // Y position (0 to 100%) 
+    uint8_t button;     // Button state (0 = not pressed, 1 = pressed)
+} joystick_pos_t;
+
+typedef struct {
+    uint8_t x;          // X position (0 to 255)
+    uint8_t y;          // Y position (0 to 255)
+} slider_pos_t;
 
 /**
- * Creates a basic joystick that can be updated manually.
- * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
- * @param deadzone The deadzone for the joystick, where the joystick is considered to be at rest.
- * @return A Joystick struct representing the joystick.
+ * Gets joystick position as percentage (0-100%)
  */
-Joystick joystick_create(Vec2 rest_pos, Vec2 deadzone);
+joystick_pos_t joystick_get_position(void);
 
 /**
- * Creates a joystick that reads from analog pins.
- * @param x_pin The pin number for the X axis.
- * @param y_pin The pin number for the Y axis.
- * @param scale_min The value read from the analog pin that represents the minimum joystick output.
- * @param scale_max The value read from the analog pin that represents the maximum joystick output.
- * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
- * @param deadzone The deadzone for the joystick, where the joystick is considered to be at rest.
- * @return A PinJoystick struct representing the joystick.
+ * Gets slider position (0-255 range)
  */
-PinJoystick joystick_pin_create(int x_pin, int y_pin, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone);
+slider_pos_t slider_get_position(void);
 
 /**
- * Creates a joystick that reads from memory-mapped registers.
- * @param x_reg The memory address for the X axis.
- * @param y_reg The memory address for the Y axis.
- * @param scale_min The value read from the register that represents the minimum joystick output.
- * @param scale_max The value read from the register that represents the maximum joystick output.
- * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
- * @param deadzone The deadzone for the joystick, where the joystick is considered to be at rest.
- * @return A MemoryJoystick struct representing the joystick.
+ * Reset joystick auto-calibration (forces recalibration)
  */
-MemoryJoystick joystick_memory_create(int *x_reg, int *y_reg, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone);
+void joystick_reset_calibration(void);
 
 /**
- * Updates the joystick position based on raw input values, applying deadzone compensation.
- * @param j Pointer to the Joystick struct to update.
- * @param value_x The raw X axis value, typically in the range [-1.0, 1.0].
- * @param value_y The raw Y axis value, typically in the range [-1.0, 1.0].
+ * Get current calibration values for debugging
  */
-void joystick_update(Joystick *j, float value_x, float value_y);
-
-/**
- * Calibrates the joystick by determining the average resting position over a specified duration.
- * This function helps to set the deadzone dynamically based on user input.
- * Must be called repeatedly until it returns false.
- * The update function must be called in between calls to this function to update the joystick position.
- * @param j Pointer to the Joystick struct to calibrate.
- * @param duration The duration in milliseconds over which to sample the joystick position.
- * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
- * @return true if calibration is still in progress, false if calibration is complete.
- */
-bool joystick_calibrate(Joystick *j, long duration, float margin);
-
-/**
- * Calibrates the MemoryJoystick by determining the average resting position over a specified duration.
- * This function helps to set the deadzone dynamically based on user input.
- * This function blocks until calibration is complete.
- * @param j Pointer to the MemoryJoystick struct to calibrate.
- * @param duration The duration in milliseconds over which to sample the joystick position.
- * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
- */
-void joystick_memory_calibrate_blocking(MemoryJoystick *j, long duration, float margin);
-
-/**
- * Calibrates the PinJoystick by determining the average resting position over a specified duration.
- * This function helps to set the deadzone dynamically based on user input.
- * This function blocks until calibration is complete.
- * @param j Pointer to the PinJoystick struct to calibrate.
- * @param duration The duration in milliseconds over which to sample the joystick position.
- * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
- */
-void joystick_pin_calibrate_blocking(PinJoystick *j, long duration, float margin);
-
-/**
- * Sets up the pins for a PinJoystick.
- * @param j Pointer to the PinJoystick struct to set up.
- */
-void joystick_pin_setup(PinJoystick *j);
-
-/**
- * Updates the PinJoystick by reading values from its analog pins and updating its position.
- * @param j Pointer to the PinJoystick struct to update.
- */
-void joystick_pin_update(PinJoystick *j);
-
-/**
- * Updates the MemoryJoystick by reading values from its memory-mapped registers and updating its position.
- * @param j Pointer to the MemoryJoystick struct to update.
- */
-void joystick_memory_update(MemoryJoystick *j);
-
-/**
- * Retrieves the current joystick position with x and y in the range of [-1.0, 1.0].
- * @param j Pointer to the Joystick struct.
- * @return A Vec2 struct containing the centered X and Y positions.
- */
-Vec2 joystick_get_position_centered(Joystick *j);
-
-/**
- * Retrieves the current joystick position, with the X axis in the range of [-1.0, 1.0] and the Y axis in the range of [0.0, 1.0].
- * @param j Pointer to the Joystick struct.
- * @return A Vec2 struct containing the X position in [-1.0, 1.0] and Y position in [0.0, 1.0].
- */
-Vec2 joystick_get_position_centered_x(Joystick *j);
-
-/**
- * Retrieves the current joystick position, scaled to a specified range.
- * @param j Pointer to the Joystick struct.
- * @param min_x The minimum value for the X axis after scaling.
- * @param max_x The maximum value for the X axis after scaling.
- * @param min_y The minimum value for the Y axis after scaling.
- * @param max_y The maximum value for the Y axis after scaling.
- * @return A Vec2 struct containing the scaled X and Y positions.
- */
-Vec2 joystick_get_position_scaled(Joystick *j, float min_x, float max_x, float min_y, float max_y);
+void joystick_get_calibration(uint16_t *x_min, uint16_t *x_max, uint16_t *y_min, uint16_t *y_max);
