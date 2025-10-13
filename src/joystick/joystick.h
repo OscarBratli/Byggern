@@ -72,3 +72,13 @@ void joystick_calibrate_now(void);
  * Display joystick and slider values on OLED (for testing)
  */
 void display_joystick(void);
+
+/**
+ * Manually calibrate slider with current position
+ */
+void slider_calibrate_now(void);
+
+/**
+ * Reset slider calibration (forces recalibration)
+ */
+void slider_reset_calibration(void);

@@ -13,6 +13,13 @@ static struct {
     bool initialized;
 } joystick_cal = {0};
 
+// Slider calibration variables
+static struct {
+    uint16_t x_min, x_max;
+    uint16_t y_min, y_max;
+    bool initialized;
+} slider_cal = {0};
+
 // Auto-calibration functions
 static void joystick_auto_calibrate(uint16_t adc_x, uint16_t adc_y)
 {
@@ -106,9 +113,15 @@ slider_pos_t slider_get_position(void)
     uint16_t adc_x = adc_read(SLIDER_ADC_X_CHANNEL);  // A2
     uint16_t adc_y = adc_read(SLIDER_ADC_Y_CHANNEL);  // A3
     
-    // Normalize to 0-255 range
-    pos.x = normalize_to_byte(adc_x, SLIDER_ADC_X_MIN, SLIDER_ADC_X_MAX);
-    pos.y = normalize_to_byte(adc_y, SLIDER_ADC_Y_MIN, SLIDER_ADC_Y_MAX);
+    // Use calibrated values if available, otherwise use fixed defaults
+    uint16_t x_min = slider_cal.initialized ? slider_cal.x_min : SLIDER_ADC_X_MIN;
+    uint16_t x_max = slider_cal.initialized ? slider_cal.x_max : SLIDER_ADC_X_MAX;
+    uint16_t y_min = slider_cal.initialized ? slider_cal.y_min : SLIDER_ADC_Y_MIN;
+    uint16_t y_max = slider_cal.initialized ? slider_cal.y_max : SLIDER_ADC_Y_MAX;
+    
+    // Normalize to 0-255 range using calibrated or default values
+    pos.x = normalize_to_byte(adc_x, x_min, x_max);
+    pos.y = normalize_to_byte(adc_y, y_min, y_max);
     
     return pos;
 }
@@ -135,6 +148,23 @@ void joystick_get_calibration(uint16_t *x_min, uint16_t *x_max, uint16_t *y_min,
     }
 }
 
+// Slider auto-calibration functions
+static void slider_auto_calibrate(uint16_t adc_x, uint16_t adc_y)
+{
+    if (!slider_cal.initialized) {
+        // First reading - initialize with current values
+        slider_cal.x_min = slider_cal.x_max = adc_x;
+        slider_cal.y_min = slider_cal.y_max = adc_y;
+        slider_cal.initialized = true;
+    } else {
+        // Update min/max values
+        if (adc_x < slider_cal.x_min) slider_cal.x_min = adc_x;
+        if (adc_x > slider_cal.x_max) slider_cal.x_max = adc_x;
+        if (adc_y < slider_cal.y_min) slider_cal.y_min = adc_y;
+        if (adc_y > slider_cal.y_max) slider_cal.y_max = adc_y; 
+    }
+}
+
 // Explicit calibration function - call this to calibrate joystick manually
 void joystick_calibrate_now(void)
 {
@@ -144,6 +174,23 @@ void joystick_calibrate_now(void)
     
     // Force calibration with current reading
     joystick_auto_calibrate(adc_x, adc_y);
+}
+
+// Explicit calibration function - call this to calibrate slider manually
+void slider_calibrate_now(void)
+{
+    // Read current ADC values and use for calibration
+    uint16_t adc_x = adc_read(SLIDER_ADC_X_CHANNEL);  
+    uint16_t adc_y = adc_read(SLIDER_ADC_Y_CHANNEL);  
+    
+    // Force calibration with current reading
+    slider_auto_calibrate(adc_x, adc_y);
+}
+
+// Reset slider calibration
+void slider_reset_calibration(void)
+{
+    slider_cal.initialized = false;
 }
 
 void display_joystick(void) {

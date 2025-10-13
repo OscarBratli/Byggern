@@ -244,10 +244,42 @@ void menu_selector(void)
                                 break;
                             case 1: // Calibrate Slider  
                                 oled_clear_screen();
-                                oled_print_string("Slider calib", 0, 2);
-                                oled_print_string("not impl yet", 0, 3);
+                                oled_print_string("Calib Slider", 0, 1);
+                                oled_print_string("Move finger", 0, 2);
+                                oled_print_string("around fully", 0, 3);
                                 oled_print_string("Press joy btn", 0, 4);
-                                // Wait for joystick button press
+                                oled_print_string("when done", 0, 5);
+                                
+                                slider_reset_calibration();
+                                
+                                // Calibration loop - continuously update calibration
+                                bool slider_calibrating = true;
+                                while (slider_calibrating) {
+                                    // Manually call slider calibration with current values
+                                    slider_calibrate_now();
+                                    
+                                    // Check for button press to finish calibration
+                                    joystick_pos_t joy = joystick_get_position();
+                                    if (joy.button) {
+                                        slider_calibrating = false;
+                                        
+                                        // Wait for button release to avoid immediate menu selection
+                                        while (joy.button) {
+                                            joy = joystick_get_position();
+                                            _delay_ms(50);
+                                        }
+                                    }
+                                    _delay_ms(50);
+                                }
+                                
+                                // Show completion message
+                                oled_clear_screen();
+                                oled_print_string("Slider Calib", 0, 1);
+                                oled_print_string("Complete!", 0, 2);
+                                oled_print_string("Press joy btn", 0, 4);
+                                printf("Slider calibrated!\r\n");
+                                
+                                // Wait for button press to continue
                                 while (1) {
                                     joystick_pos_t joy = joystick_get_position();
                                     if (joy.button) break;
