@@ -13,12 +13,11 @@
 
 void SPI_MasterInit(void)
 {
-/* Set MOSI and SCK output, all others input */
-DDRB = (1<<SPI_MOSI)|(1<<SPI_SCK);
+/* Set MOSI and SCK as outputs, preserve other DDR settings */
+DDRB |= (1<<SPI_MOSI)|(1<<SPI_SCK);  // Use |= instead of = to preserve other pins!
 
 /* Enable SPI, Master, set clock rate fck/16, Mode 0 (CPOL=0, CPHA=0) */
 SPCR = (1<<SPE)|(1<<MSTR)|(1<<SPR0);  // CPOL=0, CPHA=0 (bits default to 0)
-
 
 // Explicitly ensure CPOL=0 and CPHA=0 for SPI Mode 0
 SPCR &= ~(1<<CPOL);  // Clear CPOL bit (Clock Polarity = 0)
@@ -37,8 +36,8 @@ while(!(SPSR & (1<<SPIF)))
 
 void SPI_SlaveInit(void)
 {
-/* Set MISO output, all others input */
-DDRB = (1<<SPI_MISO);
+/* Set MISO as output, preserve other DDR settings */
+DDRB |= (1<<SPI_MISO);  // Use |= instead of = to preserve other pins!
 /* Enable SPI */
 SPCR = (1<<SPE);
 }
@@ -88,7 +87,7 @@ void spi_setup(void)
     // Initialize SPI
     SPI_MasterInit();
     
-    // Set MOSI, SCK, and a CS pin as outputs for testing
+    // Set MOSI, SCK, and CS pin as outputs for testing (if needed)
     DDRB |= (1 << SPI_MOSI) | (1 << SPI_SCK) | (1 << SPI_SS);  // MOSI, SCK, CS
     PORTB |= (1 << SPI_SS);  // CS high (deselected)
 
