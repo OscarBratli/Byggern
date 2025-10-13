@@ -1,4 +1,5 @@
 #include "driver.h"
+#include <stdbool.h>
 
 // Static instances of joystick and slider
 static AdcJoystick joystick;
