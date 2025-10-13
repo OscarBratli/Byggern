@@ -1,7 +1,10 @@
 #include "joystick.h"
 #include "adc/adc.h"
+#include "oled/oled.h"
 #include <stdbool.h>
 #include <avr/io.h>
+#include <stdio.h>
+#include <util/delay.h>
 
 // Auto-calibration variables
 static struct {
@@ -77,10 +80,8 @@ joystick_pos_t joystick_get_position(void)
     uint16_t adc_x = adc_read(JOYSTICK_ADC_X_CHANNEL);  // A1
     uint16_t adc_y = adc_read(JOYSTICK_ADC_Y_CHANNEL);  // A0
     
-    // Auto-calibrate based on current readings
-    joystick_auto_calibrate(adc_x, adc_y);
-    
-    // Use calibrated values for normalization, with fallback to defaults
+    // NO auto-calibration - only use fixed defaults or explicit calibration
+    // Use calibrated values if available, otherwise use fixed defaults
     uint16_t x_min = joystick_cal.initialized ? joystick_cal.x_min : JOYSTICK_ADC_X_MIN;
     uint16_t x_max = joystick_cal.initialized ? joystick_cal.x_max : JOYSTICK_ADC_X_MAX;
     uint16_t y_min = joystick_cal.initialized ? joystick_cal.y_min : JOYSTICK_ADC_Y_MIN;
@@ -134,6 +135,17 @@ void joystick_get_calibration(uint16_t *x_min, uint16_t *x_max, uint16_t *y_min,
     }
 }
 
+// Explicit calibration function - call this to calibrate joystick manually
+void joystick_calibrate_now(void)
+{
+    // Read current ADC values and use for calibration
+    uint16_t adc_x = adc_read(JOYSTICK_ADC_X_CHANNEL);  
+    uint16_t adc_y = adc_read(JOYSTICK_ADC_Y_CHANNEL);  
+    
+    // Force calibration with current reading
+    joystick_auto_calibrate(adc_x, adc_y);
+}
+
 void display_joystick(void) {
 
     // Get joystick and slider positions
@@ -151,7 +163,7 @@ void display_joystick(void) {
     oled_print_string(joy_str, 0, 2);
     oled_print_string(slider_str, 0, 3);
     
-    // Also send to serial for debugging
+    // Also send to serial for debugging  
     printf("Joystick: X=%u%%, Y=%u%% | Slider: X=%u, Y=%u\r\n", 
            joy_pos.x, joy_pos.y, slider_pos.x, slider_pos.y);
     

@@ -62,3 +62,13 @@ void joystick_reset_calibration(void);
  * Get current calibration values for debugging
  */
 void joystick_get_calibration(uint16_t *x_min, uint16_t *x_max, uint16_t *y_min, uint16_t *y_max);
+
+/**
+ * Manually calibrate joystick with current position
+ */
+void joystick_calibrate_now(void);
+
+/**
+ * Display joystick and slider values on OLED (for testing)
+ */
+void display_joystick(void);

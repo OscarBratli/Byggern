@@ -9,6 +9,14 @@
 #define MAX_MENU_TEXT_LEN  8    // Maximum length of menu item text
 #define MENU_DISPLAY_LINES 4    // How many menu lines fit on OLED
 
+//MENU SYSTEM
+
+void display_menu(void);
+void display_submenu(void);
+void menu_selector(void);
+
+
+
 // Menu item types
 typedef enum {
     MENU_ITEM_ACTION,    // Executes a function when selected
