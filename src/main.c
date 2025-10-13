@@ -31,7 +31,7 @@ void loop(void)
 
 int main(void)
 {
-    cpu_time_init(); 
+    cpu_time_init();  
     setup();
    // loop();
    while (1)
@@ -41,4 +41,4 @@ int main(void)
     return 0; 
     
 }
- 
+   
