@@ -52,6 +52,29 @@ while(!(SPSR & (1<<SPIF)))
 return SPDR;
 }
 
+void SPI_Select(void)
+{
+/* Pull CS low to select slave */
+PORTB &= ~(1<<SPI_SS);
+}
+
+void SPI_Deselect(void)
+{
+/* Pull CS high to deselect slave */
+PORTB |= (1<<SPI_SS);
+}
+
+uint8_t SPI_Transfer(uint8_t data)
+{
+/* Start transmission */
+SPDR = data;
+/* Wait for transmission complete */
+while(!(SPSR & (1<<SPIF)))
+;
+/* Return received data */
+return SPDR;
+}
+
 
 
 
@@ -75,8 +98,8 @@ void spi_setup(void)
 void spi_loop(void)
 {
     
-    // Select device (CS low)
-    PORTB &= ~(1 << PB3);
+    // Select device using proper SPI function
+    SPI_Select();
     _delay_us(10);
     
     // Send test pattern: 0x55 (01010101) - easy to see on scope
@@ -96,7 +119,7 @@ void spi_loop(void)
     SPI_MasterTransmit(0x00);
     _delay_ms(900);
     
-    // Deselect device (CS high)
-     PORTB |= (1 << SPI_SS);
+    // Deselect device using proper SPI function
+    SPI_Deselect();
     _delay_ms(500);
 } 

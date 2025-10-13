@@ -1,6 +1,7 @@
 #include "joystick.h"
 #include "adc/adc.h"
 #include <stdbool.h>
+#include <avr/io.h>
 
 // Auto-calibration variables
 static struct {
@@ -51,6 +52,23 @@ static uint8_t normalize_to_byte(uint16_t adc_value, uint16_t min_val, uint16_t 
     return (uint8_t)result;
 }
 
+void joystick_init(void)
+{
+    // Configure joystick center button pin (JOY_B) as input with pull-up resistor
+    // This is the only button directly connected to ATmega162 (PB1)
+    // All other buttons (touchpad, slider, etc.) come via SPI from I/O board
+    JOYSTICK_BUTTON_DDR &= ~(1 << JOYSTICK_BUTTON_PIN);  // Set as input
+    JOYSTICK_BUTTON_PORT |= (1 << JOYSTICK_BUTTON_PIN);  // Enable pull-up
+}
+
+static uint8_t joystick_read_button(void)
+{
+    // Read joystick center button (JOY_B) - the only button directly connected to ATmega162
+    // Button is active low (pressed = 0, released = 1) due to pull-up resistor
+    // We return 1 when pressed, 0 when not pressed
+    return !(JOYSTICK_BUTTON_PINREG & (1 << JOYSTICK_BUTTON_PIN));
+}
+
 joystick_pos_t joystick_get_position(void)
 {
     joystick_pos_t pos;
@@ -72,8 +90,9 @@ joystick_pos_t joystick_get_position(void)
     pos.x = normalize_to_percentage(adc_x, x_min, x_max);
     pos.y = normalize_to_percentage(adc_y, y_min, y_max);
     
-    // TODO: Add button reading if needed
-    pos.button = 0;
+    // Read joystick center button (JOY_B) from PB1 (active low with pull-up)
+    // Note: Other buttons (touchpad, slider) are accessed via SPI through I/O board
+    pos.button = joystick_read_button();
     
     return pos;
 }

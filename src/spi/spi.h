@@ -15,20 +15,16 @@
 #define OLED_CS   PB3   // Pin 1 (DISP_CS) -> PB3 ✓
 #define OLED_RES  PD5   // Pin 6 (DISP_RES) -> PD5 ✓
 
-// === Public SPI functions ===
+// === Core SPI functions ===
 void SPI_MasterInit(void);
-void SPI_SlaveInit(void);
-void SPI_MasterTransmit(char cData); 
-char SPI_SlaveReceive(void); 
-void SPI_Select(void);
-void SPI_Deselect(void);
-uint8_t SPI_Transfer(uint8_t data);
-void spi_setup(void);  // SPI test setup (call once)
-void spi_loop(void);   // SPI test loop (call repeatedly)  
+void SPI_Select(void);              // Select slave (CS low)
+void SPI_Deselect(void);            // Deselect slave (CS high) 
+void SPI_MasterTransmit(char cData); // Write byte
+char SPI_SlaveReceive(void);        // Read byte
+uint8_t SPI_Transfer(uint8_t data); // Read/write byte (full duplex)
 
-// === OLED helpers for higher-level drivers ===
-void oled_set_command_mode(void);
-void oled_set_data_mode(void);
-void oled_reset_pulse(void);
+// === Test functions ===
+void spi_setup(void);  // SPI test setup (call once)
+void spi_loop(void);   // SPI test loop (call repeatedly)
 
 #endif

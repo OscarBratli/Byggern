@@ -1,5 +1,12 @@
 #pragma once
 #include <stdint.h>
+#include <avr/io.h>
+
+// Joystick center button pin assignment (JOY_B from I/O board pin 9)
+#define JOYSTICK_BUTTON_PIN     PB1     // JOY_B connected to PB1 (ATmega162 Pin 2)
+#define JOYSTICK_BUTTON_PORT    PORTB
+#define JOYSTICK_BUTTON_DDR     DDRB
+#define JOYSTICK_BUTTON_PINREG  PINB
 
 // ADC channel assignments
 #define JOYSTICK_ADC_X_CHANNEL  1       // A1 - Joystick X axis
@@ -30,6 +37,11 @@ typedef struct {
     uint8_t x;          // X position (0 to 255)
     uint8_t y;          // Y position (0 to 255)
 } slider_pos_t;
+
+/**
+ * Initialize joystick (including button pin setup)
+ */
+void joystick_init(void);
 
 /**
  * Gets joystick position as percentage (0-100%)
