@@ -32,6 +32,23 @@ MemoryJoystick joystick_memory_create(int *x_reg, int *y_reg, int scale_min, int
     return j;
 }
 
+AdcJoystick joystick_adc_create(uint8_t x_channel, uint8_t y_channel, 
+                                uint8_t x_min, uint8_t x_max, 
+                                uint8_t y_min, uint8_t y_max,
+                                Vec2 rest_pos, Vec2 deadzone)
+{
+    AdcJoystick j;
+    j.x_channel = x_channel;
+    j.y_channel = y_channel;
+    j.x_min = x_min;
+    j.x_max = x_max;
+    j.y_min = y_min;
+    j.y_max = y_max;
+    j.joystick.rest_pos = rest_pos;
+    j.joystick.deadzone = deadzone;
+    return j;
+}
+
 void joystick_update(Joystick *j, float value_x, float value_y)
 {
     j->raw_position.x = value_x;
@@ -146,6 +163,27 @@ void joystick_memory_update(MemoryJoystick *j)
         &j->joystick,
         scale(*(j->x_reg), j->scale_min, j->scale_max, -1.0, 1.0),
         scale(*(j->y_reg), j->scale_min, j->scale_max, -1.0, 1.0));
+}
+
+void joystick_adc_update(AdcJoystick *j)
+{
+    // Read ADC values from the specified channels
+    uint8_t adc_x = adc_read(j->x_channel);
+    uint8_t adc_y = adc_read(j->y_channel);
+    
+    // Scale ADC values to [-1.0, 1.0] range
+    joystick_update(
+        &j->joystick,
+        scale(adc_x, j->x_min, j->x_max, -1.0, 1.0),
+        scale(adc_y, j->y_min, j->y_max, -1.0, 1.0));
+}
+
+void joystick_adc_calibrate_blocking(AdcJoystick *j, long duration, float margin)
+{
+    while (joystick_calibrate(&j->joystick, duration, margin))
+    {
+        joystick_adc_update(j);
+    }
 }
 
 Vec2 joystick_get_position_centered(Joystick *j)

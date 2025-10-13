@@ -1,10 +1,12 @@
 #pragma once
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include "pin/pin.h"
 #include "vec2/vec2.h"
 #include "scale/scale.h"
 #include "cpu_time/cpu_time.h"
+#include "adc/adc.h"
 
 typedef struct
 {
@@ -40,6 +42,20 @@ typedef union
     };
 } MemoryJoystick;
 
+typedef union
+{
+    Joystick joystick;
+    struct
+    {
+        uint8_t x_channel;  // ADC channel for X axis
+        uint8_t y_channel;  // ADC channel for Y axis
+        uint8_t x_min;      // Minimum ADC value for X axis
+        uint8_t x_max;      // Maximum ADC value for X axis
+        uint8_t y_min;      // Minimum ADC value for Y axis
+        uint8_t y_max;      // Maximum ADC value for Y axis
+    };
+} AdcJoystick;
+
 /**
  * Creates a basic joystick that can be updated manually.
  * @param rest_pos The position of the joystick when at rest ([0, 0] if centered, [-1, -1] if left and down, [0, -1] if x is centered and y is down).
@@ -71,6 +87,31 @@ PinJoystick joystick_pin_create(int x_pin, int y_pin, int scale_min, int scale_m
  * @return A MemoryJoystick struct representing the joystick.
  */
 MemoryJoystick joystick_memory_create(int *x_reg, int *y_reg, int scale_min, int scale_max, Vec2 rest_pos, Vec2 deadzone);
+
+/**
+ * Creates a joystick that reads from ADC channels.
+ * Based on measured ADC values:
+ * - Joystick X (channel 1): Center=160, Min=61, Max=251
+ * - Joystick Y (channel 0): Center=160, Min=80, Max=240
+ * 
+ * Voltage to ADC relationship (approximately linear):
+ * - X axis: ADC = (V - 0.934) / (4.08 - 0.934) * (251 - 61) + 61
+ * - Y axis: ADC = (V - 1.165) / (3.857 - 1.165) * (240 - 80) + 80
+ * 
+ * @param x_channel ADC channel for X axis (typically channel 1)
+ * @param y_channel ADC channel for Y axis (typically channel 0)
+ * @param x_min Minimum ADC value for X axis
+ * @param x_max Maximum ADC value for X axis
+ * @param y_min Minimum ADC value for Y axis
+ * @param y_max Maximum ADC value for Y axis
+ * @param rest_pos The position of the joystick when at rest ([0, 0] if centered)
+ * @param deadzone The deadzone for the joystick
+ * @return An AdcJoystick struct representing the joystick
+ */
+AdcJoystick joystick_adc_create(uint8_t x_channel, uint8_t y_channel, 
+                                uint8_t x_min, uint8_t x_max, 
+                                uint8_t y_min, uint8_t y_max,
+                                Vec2 rest_pos, Vec2 deadzone);
 
 /**
  * Updates the joystick position based on raw input values, applying deadzone compensation.
@@ -129,6 +170,21 @@ void joystick_pin_update(PinJoystick *j);
  * @param j Pointer to the MemoryJoystick struct to update.
  */
 void joystick_memory_update(MemoryJoystick *j);
+
+/**
+ * Updates the AdcJoystick by reading values from its ADC channels and updating its position.
+ * @param j Pointer to the AdcJoystick struct to update.
+ */
+void joystick_adc_update(AdcJoystick *j);
+
+/**
+ * Calibrates the AdcJoystick by determining the average resting position over a specified duration.
+ * This function blocks until calibration is complete.
+ * @param j Pointer to the AdcJoystick struct to calibrate.
+ * @param duration The duration in milliseconds over which to sample the joystick position.
+ * @param margin A margin factor to apply to the maximum observed values to define the deadzone. A margin of 1.1 increases the deadzone by 10%.
+ */
+void joystick_adc_calibrate_blocking(AdcJoystick *j, long duration, float margin);
 
 /**
  * Retrieves the current joystick position with x and y in the range of [-1.0, 1.0].
