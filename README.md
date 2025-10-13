@@ -89,6 +89,128 @@ And kill the applications listed.
 sudo pkill screen
 ```
 
+## OLED Display Driver
+
+This project includes a complete SSD1306 OLED display driver with SPI communication.
+
+### Hardware Configuration
+
+**OLED Control Pins:**
+- `OLED_DC (PB2)` - Data/Command pin
+- `OLED_CS (PB3)` - Chip Select pin  
+- `OLED_RES (PD5)` - Reset pin
+
+**SPI Pins:**
+- `SPI_MOSI (PB5)` - Master Out Slave In
+- `SPI_SCK (PB7)` - Serial Clock
+- `SPI_MISO (PB6)` - Master In Slave Out (not used for OLED)
+
+### OLED Commands Used
+
+Our implementation follows the lab manual recommendations for **minimal initialization** and uses **Page Mode** addressing:
+
+#### Initialization Commands
+```c
+0xA1    // Segment remap (flip horizontally)
+0xC8    // COM scan direction (flip vertically)  
+0xAF    // Display ON
+```
+
+#### Addressing Commands  
+```c
+0x20    // Set Memory Addressing Mode
+0x10    // Page Addressing Mode (default, easiest to use)
+0xB0+n  // Set Page Address (0-7, where n is page number)
+0x00+n  // Set Lower Column Address (0x00-0x0F)
+0x10+n  // Set Higher Column Address (0x10-0x1F)
+```
+
+#### Display Commands
+```c
+0xAE    // Display OFF
+0xAF    // Display ON
+0x81    // Set Contrast Control
+0xA4    // Entire Display ON (resume from RAM)
+0xA6    // Normal Display (not inverted)
+0x8D    // Charge Pump Setting
+0x14    // Enable Charge Pump
+```
+
+### Usage Examples
+
+#### Basic Usage
+```c
+#include "oled/oled.h"
+
+// Initialize OLED display
+oled_init();
+
+// Clear the screen (turn all pixels black)
+oled_clear_screen();
+
+// Display text
+oled_print_string("Hello World!", 0, 2);
+
+// Fill entire screen white
+oled_fill_screen_white();
+```
+
+#### Page Mode Positioning
+```c
+// Set cursor to page 3, column 16
+oled_set_page_cursor(3, 16);
+
+// Print character at specific position  
+oled_print_char('A', 32, 1);  // x=32, page=1
+```
+
+### Memory Layout
+
+The OLED uses **Page Mode** addressing:
+- **128 columns** (0-127) horizontally
+- **8 pages** (0-7) vertically  
+- Each page represents **8 vertical pixels**
+- Total display: **128x64 pixels**
+
+```
+Page 0: [8 pixel rows]  ← Top of screen
+Page 1: [8 pixel rows]
+Page 2: [8 pixel rows]
+Page 3: [8 pixel rows]  ← Middle of screen  
+Page 4: [8 pixel rows]
+Page 5: [8 pixel rows]
+Page 6: [8 pixel rows]
+Page 7: [8 pixel rows]  ← Bottom of screen
+```
+
+### API Reference
+
+| Function | Description |
+|----------|-------------|
+| `oled_init()` | Initialize OLED with minimal setup (A1, C8, AF) |
+| `oled_clear_screen()` | Clear entire screen (black) |
+| `oled_fill_screen_white()` | Fill entire screen white |
+| `oled_print_char(c, x, y)` | Print single character at position |
+| `oled_print_string(str, x, y)` | Print string starting at position |
+| `oled_set_page_cursor(page, col)` | Set cursor position in page mode |
+| `oled_write_command(cmd)` | Send command to OLED |
+| `oled_write_data(data)` | Send data byte to OLED |
+
+### Font System
+
+Text rendering uses the **8x8 pixel font** from `src/fonts/fonts.h`:
+- **95 printable ASCII characters** (32-126)
+- **8 pixels wide, 8 pixels tall** per character
+- **Stored in program memory** (PROGMEM) to save RAM
+
+### SPI Communication
+
+The OLED communicates via **SPI Mode 0**:
+- **CPOL = 0** (Clock polarity)
+- **CPHA = 0** (Clock phase)  
+- **MSB first** data transmission
+- **Clock rate**: fck/16 (configurable)
+
 ## Specify microcontroller
 
 ### IDE
