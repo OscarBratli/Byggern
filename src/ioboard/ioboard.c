@@ -110,7 +110,7 @@ void btn_test(void){
     ioboard_buttons_t buttons = ioboard_read_buttons();
     
     // Print button states in compact format
-    printf("R%d | L%d | Nav: 0x%02X\r\n", 
+    printf_P(PSTR("R%d | L%d | Nav: 0x%02X\r\n"), 
            buttons.right, buttons.left, buttons.nav);
     
     // Wait before next reading

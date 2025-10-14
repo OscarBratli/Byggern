@@ -3,7 +3,7 @@
 #include "oled/oled.h"
 #include <stdbool.h>
 #include <avr/io.h>
-#include <stdio.h>
+#include <avr/pgmspace.h>
 #include <util/delay.h>
 
 // Auto-calibration variables
@@ -211,7 +211,7 @@ void display_joystick(void) {
     oled_print_string(slider_str, 0, 3);
     
     // Also send to serial for debugging  
-    printf("Joystick: X=%u%%, Y=%u%% | Slider: X=%u, Y=%u\r\n", 
+    printf_P(PSTR("Joystick: X=%u%%, Y=%u%% | Slider: X=%u, Y=%u\r\n"), 
            joy_pos.x, joy_pos.y, slider_pos.x, slider_pos.y);
     
     _delay_ms(100);  // Update every 100ms

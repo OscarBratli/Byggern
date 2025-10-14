@@ -9,7 +9,6 @@
 #include "ioboard/ioboard.h"
 #include "adc/adc.h"
 #include <util/delay.h>
-#include <stdio.h>
 #include <avr/pgmspace.h>
 
 // Menu configuration constants - ULTRA MINIMAL for ATmega162

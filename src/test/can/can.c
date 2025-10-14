@@ -61,7 +61,7 @@ void test_can_edge_cases(void) {
 }
 
 void mcp2515_test_basic_functions(void) {
-    printf("=== MCP2515 Test ===\r\n");
+    printf_P(PSTR("=== MCP2515 Test ===\r\n"));
     
     // Initialize driver
     mcp2515_init();
@@ -72,22 +72,22 @@ void mcp2515_test_basic_functions(void) {
     _delay_ms(10);
     
     if (mcp2515_test_connection()) {
-        printf("MCP2515 OK!\r\n");
+        printf_P(PSTR("MCP2515 OK!\r\n"));
     } else {
-        printf("MCP2515 FAIL!\r\n");
+        printf_P(PSTR("MCP2515 FAIL!\r\n"));
         return;
     }
     
     // Test loopback mode
     mcp2515_init_loopback();
     uint8_t canstat = mcp2515_read(MCP_CANSTAT);
-    printf("Mode: 0x%02X\r\n", canstat & MODE_MASK);
+    printf_P(PSTR("Mode: 0x%02X\r\n"), canstat & MODE_MASK);
     
-    printf("Test Complete\r\n");
+    printf_P(PSTR("Test Complete\r\n"));
 }
 
 void mcp2515_test_loopback_message(void) {
-    printf("=== Loopback Test ===\r\n");
+    printf_P(PSTR("=== Loopback Test ===\r\n"));
     
     mcp2515_init_loopback();
     
@@ -98,7 +98,7 @@ void mcp2515_test_loopback_message(void) {
     mcp2515_write(0x36, 0xAA);  // Data byte 0
     mcp2515_write(0x37, 0x55);  // Data byte 1
     
-    printf("Msg loaded\r\n");
+    printf_P(PSTR("Msg loaded\r\n"));
     
     // Send message
     mcp2515_request_to_send(MCP_RTS_TX0);
@@ -107,15 +107,15 @@ void mcp2515_test_loopback_message(void) {
     // Check if received
     uint8_t canintf = mcp2515_read(MCP_CANINTF);
     if (canintf & MCP_RX0IF) {
-        printf("Loopback OK!\r\n");
+        printf_P(PSTR("Loopback OK!\r\n"));
         uint8_t data0 = mcp2515_read(MCP_RXB0SIDH + 5);
         uint8_t data1 = mcp2515_read(MCP_RXB0SIDH + 6);
-        printf("RX: 0x%02X 0x%02X\r\n", data0, data1);
+        printf_P(PSTR("RX: 0x%02X 0x%02X\r\n"), data0, data1);
         
         // Clear interrupt flag
         mcp2515_bit_modify(MCP_CANINTF, MCP_RX0IF, 0x00);
     } else {
-        printf("Loopback FAIL\r\n");
+        printf_P(PSTR("Loopback FAIL\r\n"));
     }
 }
 

@@ -1,5 +1,5 @@
 #pragma once
-#include <stdio.h>
+#include <avr/pgmspace.h>
 #include <stdbool.h>
 #include "adc/adc.h"
 

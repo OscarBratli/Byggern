@@ -162,17 +162,17 @@ void menu_selector(void)
             selected_main_item = menu_selection;
             current_menu = SUB_MENU;
             submenu_selection = 0;  // Reset submenu selection
-            printf("Entered submenu for item %d\r\n", selected_main_item);
+            printf_P(PSTR("Entered submenu for item %d\r\n"), selected_main_item);
             
         } else {
             // Submenu selection
             if (submenu_selection == 3) {
                 // "Back" option selected - return to main menu
                 current_menu = MAIN_MENU;
-                printf("Returned to main menu\r\n");
+                printf_P(PSTR("Returned to main menu\r\n"));
             } else {
                 // Handle specific submenu actions
-                printf("Selected: Main=%d, Sub=%d\r\n", selected_main_item, submenu_selection);
+                printf_P(PSTR("Selected: Main=%d, Sub=%d\r\n"), selected_main_item, submenu_selection);
                 
                 // Execute specific actions based on selection
                 switch(selected_main_item) {
@@ -247,7 +247,7 @@ void menu_selector(void)
                                 oled_print_string("Calibration", 0, 1);
                                 oled_print_string("Complete!", 0, 2);
                                 oled_print_string("Press joy btn", 0, 4);
-                                printf("Joystick calibrated!\r\n");
+                                printf_P(PSTR("Joystick calibrated!\r\n"));
                                 
                                 // Wait for button press to continue
                                 while (1) {
@@ -291,7 +291,7 @@ void menu_selector(void)
                                 oled_print_string("Slider Calib", 0, 1);
                                 oled_print_string("Complete!", 0, 2);
                                 oled_print_string("Press joy btn", 0, 4);
-                                printf("Slider calibrated!\r\n");
+                                printf_P(PSTR("Slider calibrated!\r\n"));
                                 
                                 // Wait for button press to continue
                                 while (1) {
@@ -316,7 +316,7 @@ void menu_selector(void)
                                         break; // Exit test mode
                                     }
                                 }
-                                printf("Exited test mode\r\n");
+                                printf_P(PSTR("Exited test mode\r\n"));
                                 break;
                         }
                         break;

@@ -1,5 +1,5 @@
 #include "spi.h"
-
+#include <avr/pgmspace.h>
 
 // USE SPI Mode 0
 // Modes to decide clock polarity and phase
@@ -79,7 +79,7 @@ return SPDR;
 void spi_setup(void) 
 {
     uart_init(MYUBRR);
-    printf("SPI Test Starting...\r\n");
+    printf_P(PSTR("SPI Test Starting...\r\n"));
     
     // Initialize SPI
     SPI_MasterInit();

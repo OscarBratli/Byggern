@@ -3,7 +3,7 @@
 
 #include "utils/utils.h"
 #include <stdint.h>
-#include <stdio.h>
+#include <avr/pgmspace.h>
 #include <stdbool.h>
 #include "spi/spi.h"
 #include <util/delay.h>

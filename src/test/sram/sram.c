@@ -4,7 +4,7 @@ void sram_test_setup(void)
 {
     xmem_init();
     uart_init(MYUBRR);
-    printf("Startup OK\r\n");
+    printf_P(PSTR("Startup OK\r\n"));
 }
 
 void sram_test_loop(void)
@@ -13,7 +13,7 @@ void sram_test_loop(void)
     uint16_t ext_ram_size = 0x800;
     uint16_t write_errors = 0;
     uint16_t retrieval_errors = 0;
-    printf("Starting SRAM test...\r\n");
+    printf_P(PSTR("Starting SRAM test...\r\n"));
     // rand() stores some internal state, so calling this function in a loop will
     // yield different seeds each time (unless srand() is called before this function)
     uint16_t seed = rand();
@@ -26,12 +26,12 @@ void sram_test_loop(void)
         uint8_t retreived_value = ext_ram[i];
         if (retreived_value != some_value)
         {
-            printf("Write phase error: ext_ram[%4d] = %02X (should be %02X)\r\n", i, retreived_value, some_value);
+            printf_P(PSTR("Write phase error: ext_ram[%4d] = %02X (should be %02X)\r\n"), i, retreived_value, some_value);
             write_errors++;
         }
         else
         {
-            printf("ext_ram[%4d] = %02X\r\n", i, retreived_value);
+            printf_P(PSTR("ext_ram[%4d] = %02X\r\n"), i, retreived_value);
         }
     }
     // Retrieval phase: Check that no values were changed during or after the write phase
@@ -43,9 +43,9 @@ void sram_test_loop(void)
         uint8_t retreived_value = ext_ram[i];
         if (retreived_value != some_value)
         {
-            printf("Retrieval phase error: ext_ram[%4d] = %02X (should be %02X)\r\n", i, retreived_value, some_value);
+            printf_P(PSTR("Retrieval phase error: ext_ram[%4d] = %02X (should be %02X)\r\n"), i, retreived_value, some_value);
             retrieval_errors++;
         }
     }
-    printf("SRAM test completed with \r\n%4d errors in write phase and \r\n%4d errors in retrieval phase\r\n", write_errors, retrieval_errors);
+    printf_P(PSTR("SRAM test completed with \r\n%4d errors in write phase and \r\n%4d errors in retrieval phase\r\n"), write_errors, retrieval_errors);
 }
