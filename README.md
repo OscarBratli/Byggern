@@ -62,9 +62,38 @@ make
 
 ## Check memory consumption
 
+### Detailed Memory Usage (Recommended)
 ```
-avr-size -C --mcu=atmega162 build/a.out
+make memory
 ```
+Shows detailed memory usage with percentages for the ATmega162:
+```
+AVR Memory Usage
+----------------
+Device: atmega162
+
+Program:   12736 bytes (77.7% Full)
+(.text + .data + .bootloader)
+
+Data:        758 bytes (74.0% Full)
+(.data + .bss + .noinit)
+```
+
+### Raw Memory Statistics
+```
+make size
+```
+Shows raw memory section sizes in bytes:
+```
+   text    data     bss     dec     hex filename
+  12022     714      44   12780    31ec build/a.out
+```
+
+**Section explanations:**
+- **text**: Program code (flash memory)
+- **data**: Initialized variables (RAM + flash)
+- **bss**: Uninitialized variables (RAM only)
+- **dec/hex**: Total memory usage in decimal/hexadecimal
 
 ## Flash device
 
@@ -307,9 +336,66 @@ All calibration values are defined in `joystick_driver.h`:
 // ... (see header file for complete calibration data)
 ```
 
+## Automatic Dependency Detection
+
+This project uses automatic dependency detection to ensure only the C files that are actually needed are compiled. This solves memory overflow issues and speeds up compilation.
+
+### How it works
+
+1. **Dependency Analysis**: The `find_deps.sh` script analyzes `#include` statements starting from the main source file
+2. **Transitive Dependencies**: It follows the dependency chain through all included header files
+3. **C File Discovery**: For each header file found, it looks for the corresponding C implementation file
+4. **Automatic Compilation**: Only the discovered C files are compiled into the final binary
+
+### Benefits
+
+- **Reduced Memory Usage**: Eliminates unused code, preventing memory overflow errors
+- **Faster Compilation**: Only compiles necessary files
+- **Automatic**: No manual maintenance of file lists required
+- **Safe**: Ensures all dependencies are included
+- **Generic**: Works with any project structure
+
+### Usage
+
+#### Normal Build
+```bash
+make clean && make
+```
+
+#### View Dependency Analysis
+```bash
+make show-deps
+```
+This shows which files will be included and which will be excluded.
+
+#### Check Memory Usage
+```bash
+make memory    # Detailed usage with percentages
+make size      # Raw section sizes in bytes
+```
+Monitor memory consumption to ensure the automatic dependency detection is keeping your program lean.
+
+### Implementation
+
+- `find_deps.sh`: Generic dependency analysis script that auto-detects project structure
+- `Makefile`: Uses automatic dependency detection via `SOURCE_FILES := $(shell ./find_deps.sh)`
+- No hardcoded file lists or module names
+
+### Algorithm
+
+The dependency detector:
+1. Auto-locates the main source file (searches for `src/main.c` or `main.c`)
+2. Parses `#include "..."` statements (local includes only, ignores system includes)
+3. Recursively follows include chains through header files
+4. Finds corresponding `.c` files for each `.h` file discovered
+5. Normalizes and deduplicates all paths
+6. Outputs only the C files that are transitively reachable
+
+The system is completely generic - no project-specific assumptions or hardcoded module names.
+
 ## Specify microcontroller
 
-### IDE
+### IDE-C --mcu=$(TARGET_CPU)
 
 Include a definition in `.vscode/c_cpp_properties.json` such that the IDE can recognize the IO config
 

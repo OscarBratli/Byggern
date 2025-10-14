@@ -1,5 +1,6 @@
-# List all source files to be compiled; separate with space
-SOURCE_FILES := $(shell find src -type f -name '*.c')
+# Automatically detect source files needed by tracing dependencies from main.c
+# This analyzes #include statements to find only the C files that are actually used
+SOURCE_FILES := $(shell ./find_deps.sh)
 
 # Set this flag to "yes" (no quotes) to use JTAG; otherwise ISP (SPI) is used
 PROGRAM_WITH_JTAG := yes
@@ -46,6 +47,24 @@ clean:
 erase:
 	avrdude -p $(TARGET_DEVICE) -c $(PROGRAMMER) -e
 	
+.PHONY: show-deps
+show-deps:
+	@echo "Files that will be compiled (automatically detected dependencies):"
+	@./find_deps.sh
+	@echo ""
+	@echo "Files that will be excluded (not referenced by dependency chain):"
+	@./find_deps.sh > /tmp/included_files
+	@find src -name '*.c' 2>/dev/null | grep -v -f /tmp/included_files || true
+	@rm -f /tmp/included_files
+
+.PHONY: memory
+memory: $(BUILD_DIR)/a.out
+	avr-size -C --mcu=$(TARGET_CPU) $(BUILD_DIR)/a.out
+
+.PHONY: size
+size: $(BUILD_DIR)/a.out
+	avr-size $(BUILD_DIR)/a.out
+
 .PHONY: debug
 debug:
 	if pgrep avarice; then pkill avarice; fi
