@@ -1,6 +1,7 @@
 #pragma once
 #include <avr/pgmspace.h>
 #include <stdbool.h>
+#include "uart/uart.h"
 #include "adc/adc.h"
 
 enum PinMode

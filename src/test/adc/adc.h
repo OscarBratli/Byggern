@@ -1,6 +1,7 @@
 #pragma once
 
 #include <avr/pgmspace.h>
+#include "uart/uart.h"
 #include <stdlib.h>
 #include "adc/adc.h"
 #include "uart/uart.h"
