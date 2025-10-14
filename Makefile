@@ -16,7 +16,8 @@ TARGET_CPU := atmega162
 TARGET_DEVICE := m162
 
 CC := avr-gcc
-CFLAGS := -O -std=c11 -mmcu=$(TARGET_CPU) -ggdb -Isrc -I.
+CFLAGS := -O -std=c11 -mmcu=$(TARGET_CPU) -ggdb -Isrc -I. -ffunction-sections -fdata-sections -flto
+LDFLAGS := -Wl,--gc-sections -flto
 
 OBJECT_FILES = $(SOURCE_FILES:%.c=$(BUILD_DIR)/%.o)
 
@@ -32,7 +33,7 @@ $(BUILD_DIR)/%.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 $(BUILD_DIR)/main.hex: $(OBJECT_FILES) | $(BUILD_DIR)
-	$(CC) $(CFLAGS) $(OBJECT_FILES) -o $(BUILD_DIR)/a.out
+	$(CC) $(CFLAGS) $(LDFLAGS) $(OBJECT_FILES) -o $(BUILD_DIR)/a.out
 	avr-objcopy -j .text -j .data -O ihex $(BUILD_DIR)/a.out $(BUILD_DIR)/main.hex
 
 .PHONY: flash
