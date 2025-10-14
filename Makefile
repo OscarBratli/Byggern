@@ -1,6 +1,12 @@
-# Automatically detect source files needed by tracing dependencies from main.c
-# This analyzes #include statements to find only the C files that are actually used
-SOURCE_FILES := $(shell ./find_deps.sh)
+# Source file selection: All files by default, dependency-only with DEPS_ONLY=1
+# Usage: make DEPS_ONLY=1 or make flash DEPS_ONLY=1
+ifeq ($(DEPS_ONLY),1)
+    # Use automatic dependency detection to find only required files
+    SOURCE_FILES := $(shell ./find_deps.sh)
+else
+    # Default: compile all C files in src directory
+    SOURCE_FILES := $(shell find src -name '*.c')
+endif
 
 # Set this flag to "yes" (no quotes) to use JTAG; otherwise ISP (SPI) is used
 PROGRAM_WITH_JTAG := yes
@@ -65,6 +71,22 @@ memory: $(BUILD_DIR)/a.out
 .PHONY: size
 size: $(BUILD_DIR)/a.out
 	avr-size $(BUILD_DIR)/a.out
+
+.PHONY: help
+help:
+	@echo "Available targets:"
+	@echo "  make                    - Build project (all source files)"
+	@echo "  make DEPS_ONLY=1        - Build project (dependency-detected files only)"
+	@echo "  make flash              - Flash to device (all files by default)"
+	@echo "  make flash DEPS_ONLY=1  - Flash with dependency detection"
+	@echo "  make clean              - Clean build directory"
+	@echo "  make memory             - Show detailed memory usage"
+	@echo "  make size               - Show raw memory sections"
+	@echo "  make show-deps          - Show dependency analysis"
+	@echo "  make help               - Show this help"
+	@echo ""
+	@echo "Variables:"
+	@echo "  DEPS_ONLY=1             - Enable automatic dependency detection"
 
 .PHONY: debug
 debug:
