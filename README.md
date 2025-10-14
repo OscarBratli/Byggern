@@ -57,6 +57,13 @@ sudo make install
 
 ```
 make
+
+```
+
+## Check memory consumption
+
+```
+avr-size -C --mcu=atmega162 build/a.out
 ```
 
 ## Flash device

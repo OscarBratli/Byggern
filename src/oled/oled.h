@@ -39,6 +39,7 @@ void oled_fill_screen_white(void);
 void oled_clear_screen(void);
 void oled_print_char(char c, uint8_t x, uint8_t y);
 void oled_print_string(char* str, uint8_t x, uint8_t y);
+void oled_print_string_P(const char* str, uint8_t x, uint8_t y);
 void oled_set_cursor_page_mode(uint8_t page, uint8_t column);
 
 #endif

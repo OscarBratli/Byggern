@@ -110,4 +110,16 @@ void oled_print_string(char* str, uint8_t x, uint8_t y) {
     }
 }
 
+// Print a string from PROGMEM at position (x, y)
+void oled_print_string_P(const char* str, uint8_t x, uint8_t y) {
+    uint8_t pos_x = x;
+    char c;
+    
+    while ((c = pgm_read_byte(str)) && pos_x < 120) { // Don't go off screen
+        oled_print_char(c, pos_x, y);
+        pos_x += 8; // Move to next character position
+        str++;
+    }
+}
+
 

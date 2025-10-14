@@ -6,6 +6,27 @@
 #include "adc/adc.h"
 #include <util/delay.h>
 #include <stdio.h>
+#include <avr/pgmspace.h>
+
+// PROGMEM menu strings to save SRAM
+const char str_main_menu[] PROGMEM = "Main Menu";
+const char str_new_game[] PROGMEM = "New Game";
+const char str_high_score[] PROGMEM = "High Score";
+const char str_calibrate[] PROGMEM = "Calibrate";
+const char str_settings[] PROGMEM = "Settings";
+const char str_easy[] PROGMEM = "Easy";
+const char str_medium[] PROGMEM = "Medium";
+const char str_hard[] PROGMEM = "Hard";
+const char str_back[] PROGMEM = "Back";
+const char str_view[] PROGMEM = "View";
+const char str_reset[] PROGMEM = "Reset";
+const char str_upload[] PROGMEM = "Upload";
+const char str_joystick[] PROGMEM = "Joystick";
+const char str_slider[] PROGMEM = "Slider";
+const char str_test[] PROGMEM = "Test";
+const char str_difficulty[] PROGMEM = "Difficulty";
+const char str_debug[] PROGMEM = "Debug";
+const char str_about[] PROGMEM = "About";
 
 // Menu system variables (moved from main.c)
 typedef enum {
@@ -26,7 +47,7 @@ uint8_t navigation_counter = 0;          // Counter for navigation debouncing
 void display_menu(void)
 {
     oled_clear_screen();
-    oled_print_string("Main Menu", 0, 0);
+    oled_print_string_P(str_main_menu, 0, 0);
     
     // Display each menu item directly to save RAM
     for (uint8_t i = 0; i < 4; i++) {
@@ -37,12 +58,12 @@ void display_menu(void)
             oled_print_char(' ', 0, i + 2);  // Space for unselected items
         }
         
-        // Display menu item text directly 
+        // Display menu item text directly from PROGMEM
         switch(i) {
-            case 0: oled_print_string("New Game", 8, i + 2); break;
-            case 1: oled_print_string("High Score", 8, i + 2); break;
-            case 2: oled_print_string("Calibrate", 8, i + 2); break;
-            case 3: oled_print_string("Settings", 8, i + 2); break;
+            case 0: oled_print_string_P(str_new_game, 8, i + 2); break;
+            case 1: oled_print_string_P(str_high_score, 8, i + 2); break;
+            case 2: oled_print_string_P(str_calibrate, 8, i + 2); break;
+            case 3: oled_print_string_P(str_settings, 8, i + 2); break;
         }
     }
 }
@@ -53,10 +74,10 @@ void display_submenu(void)
     
     // Display title based on selected main menu item
     switch(selected_main_item) {
-        case 0: oled_print_string("New Game", 0, 0); break;
-        case 1: oled_print_string("High Score", 0, 0); break;
-        case 2: oled_print_string("Calibrate", 0, 0); break;
-        case 3: oled_print_string("Settings", 0, 0); break;
+        case 0: oled_print_string_P(str_new_game, 0, 0); break;
+        case 1: oled_print_string_P(str_high_score, 0, 0); break;
+        case 2: oled_print_string_P(str_calibrate, 0, 0); break;
+        case 3: oled_print_string_P(str_settings, 0, 0); break;
     }
     
     // Display submenu items based on which main menu was selected
@@ -68,38 +89,38 @@ void display_submenu(void)
             oled_print_char(' ', 0, i + 2);  // Space for unselected items
         }
         
-        // Display context-specific submenu items
+        // Display context-specific submenu items from PROGMEM
         switch(selected_main_item) {
             case 0: // New Game submenu
                 switch(i) {
-                    case 0: oled_print_string("Easy", 8, i + 2); break;
-                    case 1: oled_print_string("Medium", 8, i + 2); break;
-                    case 2: oled_print_string("Hard", 8, i + 2); break;
-                    case 3: oled_print_string("Back", 8, i + 2); break;
+                    case 0: oled_print_string_P(str_easy, 8, i + 2); break;
+                    case 1: oled_print_string_P(str_medium, 8, i + 2); break;
+                    case 2: oled_print_string_P(str_hard, 8, i + 2); break;
+                    case 3: oled_print_string_P(str_back, 8, i + 2); break;
                 }
                 break;
             case 1: // High Score submenu  
                 switch(i) {
-                    case 0: oled_print_string("View", 8, i + 2); break;
-                    case 1: oled_print_string("Reset", 8, i + 2); break;
-                    case 2: oled_print_string("Upload", 8, i + 2); break;
-                    case 3: oled_print_string("Back", 8, i + 2); break;
+                    case 0: oled_print_string_P(str_view, 8, i + 2); break;
+                    case 1: oled_print_string_P(str_reset, 8, i + 2); break;
+                    case 2: oled_print_string_P(str_upload, 8, i + 2); break;
+                    case 3: oled_print_string_P(str_back, 8, i + 2); break;
                 }
                 break;
             case 2: // Calibrate submenu
                 switch(i) {
-                    case 0: oled_print_string("Joystick", 8, i + 2); break;
-                    case 1: oled_print_string("Slider", 8, i + 2); break;
-                    case 2: oled_print_string("Test", 8, i + 2); break;
-                    case 3: oled_print_string("Back", 8, i + 2); break;
+                    case 0: oled_print_string_P(str_joystick, 8, i + 2); break;
+                    case 1: oled_print_string_P(str_slider, 8, i + 2); break;
+                    case 2: oled_print_string_P(str_test, 8, i + 2); break;
+                    case 3: oled_print_string_P(str_back, 8, i + 2); break;
                 }
                 break;
             case 3: // Settings submenu
                 switch(i) {
-                    case 0: oled_print_string("Difficulty", 8, i + 2); break;
-                    case 1: oled_print_string("Debug", 8, i + 2); break;
-                    case 2: oled_print_string("About", 8, i + 2); break;
-                    case 3: oled_print_string("Back", 8, i + 2); break;
+                    case 0: oled_print_string_P(str_difficulty, 8, i + 2); break;
+                    case 1: oled_print_string_P(str_debug, 8, i + 2); break;
+                    case 2: oled_print_string_P(str_about, 8, i + 2); break;
+                    case 3: oled_print_string_P(str_back, 8, i + 2); break;
                 }
                 break;
         }
