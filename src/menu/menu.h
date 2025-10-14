@@ -2,7 +2,15 @@
 #define MENU_H
 
 #include <stdint.h>
+#include "utils/utils.h"
 #include <stdbool.h>
+#include "oled/oled.h"
+#include "joystick/joystick.h"
+#include "ioboard/ioboard.h"
+#include "adc/adc.h"
+#include <util/delay.h>
+#include <stdio.h>
+#include <avr/pgmspace.h>
 
 // Menu configuration constants - ULTRA MINIMAL for ATmega162
 #define MAX_MENU_ITEMS     4    // Maximum items per menu 

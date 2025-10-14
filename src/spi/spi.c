@@ -1,7 +1,4 @@
 #include "spi.h"
-#include <util/delay.h>
-#include "uart/uart.h"
-#include "cpu_time/cpu_time.h"
 
 
 // USE SPI Mode 0

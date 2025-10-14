@@ -1,8 +1,12 @@
 #ifndef SPI_H
 #define SPI_H
 
+#include "utils/utils.h"
 #include <avr/io.h>
 #include <stdint.h>
+#include <util/delay.h>
+#include "uart/uart.h"
+#include "cpu_time/cpu_time.h"
 
 // === SPI Pin definitions (ATmega162) - Matching your actual wiring ===
 #define SPI_MOSI PB5    // Pin 3 MOSI -> PB5 ✓

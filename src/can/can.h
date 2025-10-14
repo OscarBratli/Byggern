@@ -2,6 +2,9 @@
 #define CAN_H
 
 #include <stdint.h>
+#include "utils/utils.h"
+#include <util/delay.h>
+#include "mcp2515/mcp2515.h"
 
 // CAN message structure
 typedef struct {

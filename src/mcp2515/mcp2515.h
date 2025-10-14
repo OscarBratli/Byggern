@@ -157,6 +157,12 @@ Copyright 2003 Kimberly Otten Software Consulting
 // === MCP2515 Driver Function Declarations ===
 
 #include <stdint.h>
+#include "spi/spi.h"
+#include "uart/uart.h"
+#include "utils/utils.h"
+#include <util/delay.h>
+#include <avr/io.h>
+#include <stdio.h>
 
 // Core driver functions
 void mcp2515_init(void);                                    // Initialize MCP2515 driver

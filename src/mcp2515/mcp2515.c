@@ -1,9 +1,4 @@
 #include "mcp2515.h"
-#include "../spi/spi.h"
-#include "../uart/uart.h"
-#include <util/delay.h>
-#include <avr/io.h>
-#include <stdio.h>
 
 // MCP2515 Chip Select pin - based on wiring tables (PE0)
 #define MCP2515_CS PE0

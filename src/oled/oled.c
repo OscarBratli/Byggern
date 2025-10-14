@@ -1,9 +1,6 @@
 #include "oled.h"
-#include "spi/spi.h"
+// fonts.h MUST be included in the .c file (for some reason)
 #include "fonts/fonts.h"
-#include <util/delay.h>
-#include <avr/io.h>
-#include <avr/pgmspace.h>
 
 // Write command to OLED
 void oled_write_command(uint8_t cmd) {

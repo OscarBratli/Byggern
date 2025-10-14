@@ -1,8 +1,13 @@
 #ifndef IOBOARD_H
 #define IOBOARD_H
 
+#include "utils/utils.h"
 #include <stdint.h>
+#include <stdio.h>
 #include <stdbool.h>
+#include "spi/spi.h"
+#include <util/delay.h>
+#include <string.h>
 
 // I/O Board SPI Commands (from the documentation image)
 #define IOBOARD_CMD_TOUCHPAD    0x01    // Read touchpad (X, Y, size)

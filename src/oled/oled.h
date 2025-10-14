@@ -1,8 +1,12 @@
 #ifndef OLED_H
 #define OLED_H
 
+#include "utils/utils.h"
 #include <avr/io.h>
 #include <stdint.h>
+#include "spi/spi.h"
+#include <util/delay.h>
+#include <avr/pgmspace.h>
 
 // OLED Display dimensions
 #define OLED_WIDTH  128

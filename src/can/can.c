@@ -1,6 +1,4 @@
 #include "can.h"
-#include "mcp2515.h"
-#include <util/delay.h>
 
 // Initialize CAN controller in loopback mode for testing
 void can_init(void) {

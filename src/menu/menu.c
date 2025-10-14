@@ -1,12 +1,5 @@
 // Menu module - Complete implementation
 #include "menu.h"
-#include "oled/oled.h"
-#include "joystick/joystick.h"
-#include "ioboard/ioboard.h"
-#include "adc/adc.h"
-#include <util/delay.h>
-#include <stdio.h>
-#include <avr/pgmspace.h>
 
 // PROGMEM menu strings to save SRAM
 const char str_main_menu[] PROGMEM = "Main Menu";
