@@ -92,33 +92,3 @@ void spi_setup(void)
     PORTB |= (1 << SPI_SS);  // CS high (deselected)
 
 }
-
-// SPI Loop Function (call repeatedly in main loop)
-void spi_loop(void)
-{
-    
-    // Select device using proper SPI function
-    SPI_Select();
-    _delay_us(10);
-    
-    // Send test pattern: 0x55 (01010101) - easy to see on scope
-    printf("Sending 0x55...\r\n");
-    SPI_MasterTransmit(0x55);
-    _delay_ms(900);
-    
-    // Send test pattern: 0xAA (10101010) - opposite pattern  
-    SPI_MasterTransmit(0xAA);
-    _delay_ms(900);
-
-    // Send test pattern: 0xFF (11111111) - all high
-    SPI_MasterTransmit(0xFF);
-    _delay_ms(900);
-
-    // Send test pattern: 0x00 (00000000) - all low
-    SPI_MasterTransmit(0x00);
-    _delay_ms(900);
-    
-    // Deselect device using proper SPI function
-    SPI_Deselect();
-    _delay_ms(500);
-} 
