@@ -58,7 +58,7 @@ Pin | ATmega162 | Function | Connection
 ----|-----------|----------|------------
 10  | PD0       | GPIO     | Available
 11  | PD1       | GPIO     | Available
-12  | PD2       | GPIO     | Available
+12  | PD2       | INT0     | MCP2515 INT (CAN Interrupt)
 13  | PD3       | GPIO     | Available
 14  | PD4       | OC1A     | MAX156 CLK (Pin 9) - Timer1 output
 15  | PD5       | GPIO     | Available
@@ -66,11 +66,18 @@ Pin | ATmega162 | Function | Connection
 17  | PD7       | GPIO     | Available
 ```
 
+### Port E (PE0-PE2) - Additional I/O  
+```
+Pin | ATmega162 | Function | Connection
+----|-----------|----------|------------
+31  | PE0       | GPIO     | MCP2515 CS (CAN Chip Select)
+```
+
 ### Other Important Pins
 ```
 Pin | ATmega162 | Function | Connection
 ----|-----------|----------|------------
-31  | WR        | Write    | MAX156 WR + SRAM WR
+30  | WR        | Write    | MAX156 WR + SRAM WR
 32  | RD        | Read     | MAX156 RD + SRAM RD
 ```
 
@@ -157,6 +164,51 @@ Joystick Pin | Function | Connection
 -------------|----------|------------
 7            | GND      | System Ground
 8            | 5V       | System +5V
+```
+
+---
+
+## MCP2515 CAN Controller Connections
+
+### Power & Clock
+```
+MCP2515 Pin | Function | Connection
+------------|----------|------------
+1,18        | VDD      | +5V
+5,6         | VSS      | GND
+7           | OSC1     | 16MHz Crystal + 22pF cap to GND
+8           | OSC2     | 16MHz Crystal + 22pF cap to GND
+```
+
+### SPI Interface (Shared Bus)
+```
+MCP2515 Pin | Function | ATmega162 Connection
+------------|----------|--------------------
+12          | SCK      | PB7 (shared SPI clock)
+13          | SI(MOSI) | PB5 (shared SPI data out)
+14          | SO(MISO) | PB6 (shared SPI data in)
+15          | CS       | PE0 (dedicated CAN chip select)
+```
+
+### Control & Interrupt
+```
+MCP2515 Pin | Function | ATmega162 Connection
+------------|----------|--------------------
+16          | RESET    | Connected to system reset circuit
+17          | INT      | PD2 (INT0 - CAN interrupt)
+```
+
+### Updated SPI Bus Summary
+```
+Shared SPI Lines:
+- SCK:  PB7 (all SPI devices)
+- MOSI: PB5 (all SPI devices)  
+- MISO: PB6 (all SPI devices)
+
+Device-Specific CS Lines:
+- OLED Display:  PB3 (DISP_CS)
+- I/O Board:     PB4 (IO_CS)
+- MCP2515 CAN:   PE0 (CAN_CS)
 ```
 
 ---
