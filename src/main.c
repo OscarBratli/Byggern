@@ -1,13 +1,25 @@
 #include "test/can/can.h"
+#include "test/adc/adc.h"
+#include "test/echo/echo.h"
+#include "test/sram/sram.h"
+#include "test/menu/menu.h"
 
 void setup(void) 
 {
-    can_test_setup();
+    // can_test_setup();
+    // adc_test_setup();
+    // echo_test_setup();
+    // sram_test_setup();
+    menu_test_setup();
 }
 
 void loop(void)
 {
-    can_test_loop();
+    // can_test_loop();
+    // adc_test_loop();
+    // echo_test_loop();
+    // sram_test_loop();
+    menu_test_loop();
 }
 
 int main(void)
