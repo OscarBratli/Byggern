@@ -213,6 +213,83 @@ void test_can_loopback(void) {
     printf_P(PSTR("=== CAN Test Complete ===\r\n\r\n"));
 }
 
+// Continuous loopback test - runs forever
+void test_can_loopback_continuous(void) {
+    static uint8_t test_counter = 0;
+    static uint32_t success_count = 0;
+    static uint32_t fail_count = 0;
+    
+    // Create test message with incrementing data
+    can_message_t test_msg = {
+        .id = 0x200 + (test_counter & 0x0F),  // ID from 0x200-0x20F
+        .length = 4,
+        .data = {test_counter, test_counter + 1, test_counter + 2, test_counter + 3}
+    };
+    
+    printf_P(PSTR("Test #%d: Send ID=0x%03X Data=[%02X %02X %02X %02X] "), 
+             test_counter, test_msg.id, 
+             test_msg.data[0], test_msg.data[1], test_msg.data[2], test_msg.data[3]);
+    
+    // Send message
+    if (can_send_message(&test_msg)) {
+        _delay_ms(5);  // Small delay for loopback
+        
+        // Check for received message
+        if (can_message_pending()) {
+            can_message_t received_msg;
+            if (can_receive_message(&received_msg)) {
+                // Verify data matches
+                bool match = (test_msg.id == received_msg.id) && 
+                            (test_msg.length == received_msg.length);
+                if (match) {
+                    for (uint8_t i = 0; i < test_msg.length; i++) {
+                        if (test_msg.data[i] != received_msg.data[i]) {
+                            match = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (match) {
+                    success_count++;
+                    printf_P(PSTR("✓ OK\r\n"));
+                } else {
+                    fail_count++;
+                    printf_P(PSTR("✗ MISMATCH - RX: ID=0x%03X Data=[%02X %02X %02X %02X]\r\n"), 
+                             received_msg.id,
+                             received_msg.data[0], received_msg.data[1], 
+                             received_msg.data[2], received_msg.data[3]);
+                }
+            } else {
+                fail_count++;
+                printf_P(PSTR("✗ RX ERROR\r\n"));
+            }
+        } else {
+            fail_count++;
+            printf_P(PSTR("✗ NO RX\r\n"));
+        }
+    } else {
+        fail_count++;
+        printf_P(PSTR("✗ TX FAIL\r\n"));
+    }
+    
+    test_counter++;
+    
+    // Print statistics every 10 tests
+    if (test_counter % 10 == 0) {
+        printf_P(PSTR("--- Stats: Success=%lu, Fail=%lu, Rate="), success_count, fail_count);
+        if (success_count + fail_count > 0) {
+            uint16_t rate = (success_count * 100) / (success_count + fail_count);
+            printf_P(PSTR("%d%%"), rate);
+        } else {
+            printf_P(PSTR("N/A"));
+        }
+        printf_P(PSTR(" ---\r\n\r\n"));
+    }
+    
+    _delay_ms(100);  // 100ms between tests for readability
+}
+
 static uint8_t mcp2515_test_run = 0;
 static uint8_t can_test_run = 0;
 static uint8_t can_unit_test_run = 0;
@@ -244,4 +321,25 @@ void can_test_loop(void)
     // The menu system handles display and navigation internally
     // menu_selector(); 
     //display_joystick();
+}
+
+// Alternative test loop that runs continuous loopback
+void can_test_loop_continuous(void)
+{
+    // Run MCP2515 test once after startup
+    if (!mcp2515_test_run) {
+        _delay_ms(2000);  // Wait 2 seconds after startup
+        printf_P(PSTR("\r\n=== Starting Continuous CAN Loopback Test ===\r\n"));
+        test_mcp2515();
+        mcp2515_test_run = 1;
+        
+        // Initialize CAN for loopback testing
+        can_init();
+        printf_P(PSTR("CAN initialized for continuous loopback testing\r\n"));
+        printf_P(PSTR("Press reset to stop test\r\n\r\n"));
+        return;
+    }
+    
+    // Run continuous loopback test
+    test_can_loopback_continuous();
 }

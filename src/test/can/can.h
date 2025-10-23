@@ -17,19 +17,8 @@
 #include <stdbool.h>
 #include "spi/spi.h"
 #include "ioboard/ioboard.h"
-#include "uart/uart.h"
-#include "oled/oled.h"
-#include "joystick/joystick.h"
-#include "adc/adc.h"
-#include "menu/menu.h"
-
-#include "uart/uart.h"
-#include <stdio.h>
-#include <util/delay.h>
-
-#include <stdio.h>
-#include <string.h>
-*/
-
 void can_test_setup(void);
 void can_test_loop(void);
+void can_test_loop_continuous(void);
+void test_can_loopback_continuous(void);
+*/

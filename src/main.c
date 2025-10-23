@@ -6,16 +6,17 @@
 
 void setup(void) 
 {
-    // can_test_setup();
+     can_test_setup();
     // adc_test_setup();
     // echo_test_setup();
     // sram_test_setup();
-    menu_test_setup();
+     menu_test_setup();
 }
 
 void loop(void)
 {
-    // can_test_loop();
+    can_test_loop_continuous();  // Use continuous loopback test
+    // can_test_loop();          // Original single-run test
     // adc_test_loop();
     // echo_test_loop();
     // sram_test_loop();
@@ -24,10 +25,11 @@ void loop(void)
 
 int main(void)
 {
-    setup();
+    setup();  
     
     while (1) {
-        loop();
+        loop(); 
+        _delay_ms(100);
     }
     return 0; 
 }
