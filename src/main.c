@@ -27,7 +27,7 @@ int main(void)
 {
     setup();  
     
-    while (1) {
+    while (1) { 
         loop(); 
         _delay_ms(100);
     }

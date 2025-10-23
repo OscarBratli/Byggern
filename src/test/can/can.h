@@ -21,4 +21,4 @@
 void can_test_setup(void);
 void can_test_loop(void);
 void can_test_loop_continuous(void);
-void test_can_loopback_continuous(void); 
+
