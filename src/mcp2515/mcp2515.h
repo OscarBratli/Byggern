@@ -176,6 +176,7 @@ void mcp2515_bit_modify(uint8_t address, uint8_t mask, uint8_t data); // Bit mod
 // Higher level functions
 void mcp2515_set_mode(uint8_t mode);                       // Set operating mode
 void mcp2515_init_loopback(void);                          // Initialize for loopback mode
+void mcp2515_init_normal(void);                            // Initialize for normal mode (CAN bus communication)
 uint8_t mcp2515_test_connection(void);                     // Test if MCP2515 is responding
 
 #endif

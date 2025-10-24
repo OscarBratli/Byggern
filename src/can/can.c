@@ -1,9 +1,9 @@
 #include "can.h"
 
-// Initialize CAN controller in loopback mode for testing
+// Initialize CAN controller in normal mode for CAN bus communication
 void can_init(void) {
-    // Initialize MCP2515 in loopback mode (this already sets up timing)
-    mcp2515_init_loopback();
+    // Initialize MCP2515 in normal mode (ready for CAN bus communication)
+    mcp2515_init_normal();
 }
 
 // Send a CAN message
