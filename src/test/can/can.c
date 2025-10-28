@@ -343,3 +343,107 @@ void can_test_loop_continuous(void)
     // Run continuous loopback test
     test_can_loopback_continuous();
 }
+
+// Test CAN communication with Node 2 in NORMAL mode
+void test_can_node2_communication(void) {
+    static uint8_t test_counter = 0;
+    static uint32_t tx_count = 0;
+    static uint32_t rx_count = 0;
+    static uint8_t send_delay = 0;
+    
+    // Only send every 10 calls (once per second with 100ms delay)
+    if (send_delay >= 10) {
+        // Create test message to send to Node 2
+        can_message_t tx_msg = {
+            .id = 0x100 + (test_counter & 0x0F),  // ID from 0x100-0x10F
+            .length = 4,
+            .data = {test_counter, test_counter + 10, test_counter + 20, test_counter + 30}
+        };
+        
+        printf_P(PSTR("TX->Node2: ID=0x%03X [%02X %02X %02X %02X] "), 
+                 tx_msg.id, tx_msg.data[0], tx_msg.data[1], tx_msg.data[2], tx_msg.data[3]);
+        
+        // Send message to Node 2
+        if (can_send_message(&tx_msg)) {
+            tx_count++;
+            printf_P(PSTR("✓ Sent (TX:%lu, RX:%lu)\r\n"), tx_count, rx_count);
+        } else {
+            // DIAGNOSTIC: Why did send fail?
+            uint8_t ctrl = mcp2515_read(MCP_TXB0CTRL);
+            uint8_t eflg = mcp2515_read(MCP_EFLG);
+            uint8_t tec = mcp2515_read(MCP_TEC);
+            uint8_t rec = mcp2515_read(MCP_REC);
+            printf_P(PSTR("✗ Send failed [CTRL:0x%02X EFLG:0x%02X TEC:%d REC:%d]\r\n"),
+                     ctrl, eflg, tec, rec);
+        }
+        
+        test_counter++;
+        send_delay = 0;
+    }
+    send_delay++;
+    
+    // Check for messages from Node 2
+    if (can_message_pending()) {
+        can_message_t rx_msg;
+        if (can_receive_message(&rx_msg)) {
+            rx_count++;
+            printf_P(PSTR("RX<-Node2: ID=0x%03X ["), rx_msg.id);
+            for (uint8_t i = 0; i < rx_msg.length; i++) {
+                printf_P(PSTR("%02X"), rx_msg.data[i]);
+                if (i < rx_msg.length - 1) printf_P(PSTR(" "));
+            }
+            printf_P(PSTR("] (TX:%lu, RX:%lu)\r\n"), tx_count, rx_count);
+        }
+    }
+    
+    _delay_ms(100);  // 100ms delay between iterations
+}
+
+// Test loop for Node 1 <-> Node 2 communication
+void can_test_loop_node2(void)
+{
+    // Initialize CAN for normal mode once
+    if (!mcp2515_test_run) {
+        _delay_ms(2000);  // Wait 2 seconds after startup
+        printf_P(PSTR("\r\n=== Node 1 <-> Node 2 CAN Communication Test ===\r\n"));
+        printf_P(PSTR("Initializing MCP2515...\r\n"));
+        test_mcp2515();
+        mcp2515_test_run = 1;
+        
+        // Initialize CAN in NORMAL mode for real CAN bus
+        printf_P(PSTR("Initializing CAN in NORMAL mode (250 kbps)...\r\n"));
+        can_init_normal();
+        
+        // Verify mode
+        uint8_t canstat = mcp2515_read(MCP_CANSTAT);
+        uint8_t mode = canstat & MODE_MASK;
+        printf_P(PSTR("MCP2515 CANSTAT: 0x%02X\r\n"), canstat);
+        printf_P(PSTR("Mode: "));
+        if (mode == MODE_NORMAL) {
+            printf_P(PSTR("NORMAL ✓\r\n"));
+        } else if (mode == MODE_LOOPBACK) {
+            printf_P(PSTR("LOOPBACK ✗ (Should be NORMAL!)\r\n"));
+        } else if (mode == MODE_CONFIG) {
+            printf_P(PSTR("CONFIG ✗ (Should be NORMAL!)\r\n"));
+        } else {
+            printf_P(PSTR("UNKNOWN (0x%02X) ✗\r\n"), mode);
+        }
+        
+        // Check error flags
+        uint8_t eflg = mcp2515_read(MCP_EFLG);
+        printf_P(PSTR("Error Flags (EFLG): 0x%02X\r\n"), eflg);
+        
+        // Check TEC and REC
+        uint8_t tec = mcp2515_read(MCP_TEC);
+        uint8_t rec = mcp2515_read(MCP_REC);
+        printf_P(PSTR("TEC: %d, REC: %d\r\n"), tec, rec);
+        
+        printf_P(PSTR("CAN ready for Node 2 communication!\r\n"));
+        printf_P(PSTR("TX: Sending test messages to Node 2\r\n"));
+        printf_P(PSTR("RX: Listening for messages from Node 2\r\n\r\n"));
+        return;
+    }
+    
+    // Run Node 1 <-> Node 2 communication test
+    test_can_node2_communication();
+}

@@ -1,27 +1,19 @@
-1. place the IO board connection adapter in a convenient location on your bread board, oriented
-  such that it may be neatly connected to the MCU’s SPI pins.  (X)
-
-2. Connect the SPI pins, and choose suitable pins for the slave select signals. (X)
-
-3. Write an SPI driver for your ATmega. It should have the following capabilities:
-• Select slave n  (X)
-• Write byte      (X)
-• Read byte       (X)
-• Also convenient: Read/write n bytes  (X)
-4. Write an OLED display interface on top of the SPI driver:
-• Initialisation  (X)
-• Go to line      (X)
-• Go to column    (X)
-• Printf (or at least your own simplified version) (X)
-• Funny graphics?
-• Remember that the SPI driver itself will also be used for CAN bus
-5. You have access to several fonts for use with the display, but they are too large to be stored  (X)
-in data memory. Store them in PROGMEM and use them from there.
-6. Test your driver/interface (it’s scopin’ time!) (X)
-7. Connect the IO board, and try to send data to the OLED display. (X)
-8. Make a framework for a user interface that can be navigated in using the joystick. As a
-minimum, it should be able to let the user navigate up and down in a menu consisting of a
-list of strings, and return the menu position when the joystick button is clicked. Also, think
-about how you would implement sub-menus using this framework.
-9. Expand your interface to be able to receive data from the buttons on the IO board. You
-could for instance toggle an LED on your breadboard
+1. Recommended but optional: Write a program which enables (i.e. sets high) the servo header
+signal pin, and verify your result with an oscilloscope. Think of it as a ”hello world” for the
+Node 2 shield.
+2. It is useful to implement serial communication also on Node 2. A simple library is available
+in Blackboard. Make sure to find/set the baudrate in uart.c.
+3. Connect the CAN transceiver MCP2551 on Node 1 using the information provided in the
+datasheet. You can use the 22k resistor for slew-rate limiting.
+4. Import the CAN library for node 2 to your project. The library is available in Blackboard.
+Feel free to adapt it to your needs as the project progresses, e.g. by implementing message
+ID masks, circular buffers etc.
+5. Connect Node 1 and Node 2 together using the CAN bus, conforming to the “AN228: A
+CAN Physical Layer Discussion” document. Note: The CAN TERM jumper on the Node 2
+shield must be connected at this point.
+6. Decide the CAN bus bit-timing by writing to the CNFx registers on MCP2515. Make sure to
+match the configuration in the CAN BR register on ATSAM3X8E.
+7. Test the system again, but now with the CAN controller of node 1 in normal mode. Node 2
+should be able to reuse the upper level code generated in the previous exercise.
+8. Make a joystick driver that can send joystick position from Node 1 to Node 2 over the CAN
+bus.

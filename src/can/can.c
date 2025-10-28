@@ -1,8 +1,14 @@
 #include "can.h"
 
-// Initialize CAN controller in normal mode for CAN bus communication
+// Initialize CAN controller in loopback mode for testing
 void can_init(void) {
-    // Initialize MCP2515 in normal mode (ready for CAN bus communication)
+    // Initialize MCP2515 in loopback mode (this already sets up timing)
+    mcp2515_init_loopback();
+}
+
+// Initialize CAN controller in normal mode for actual CAN bus communication
+void can_init_normal(void) {
+    // Initialize MCP2515 in normal mode (250 kbps, real CAN bus)
     mcp2515_init_normal();
 }
 
@@ -16,7 +22,16 @@ uint8_t can_send_message(can_message_t* msg) {
     // Check if TX buffer is free
     uint8_t ctrl = mcp2515_read(MCP_TXB0CTRL);
     if (ctrl & 0x08) {  // TXREQ bit set means buffer is busy
-        return 0; // Buffer busy
+        // TX buffer stuck? Try to abort and clear errors
+        mcp2515_bit_modify(MCP_TXB0CTRL, 0x08, 0x00);  // Clear TXREQ
+        mcp2515_write(MCP_CANINTF, 0x00);  // Clear all interrupt flags
+        mcp2515_write(MCP_EFLG, 0x00);     // Clear all error flags
+        
+        // Check again
+        ctrl = mcp2515_read(MCP_TXB0CTRL);
+        if (ctrl & 0x08) {
+            return 0; // Still busy, give up
+        }
     }
     
     // Load message into TX buffer 0
@@ -34,6 +49,9 @@ uint8_t can_send_message(can_message_t* msg) {
     for (uint8_t i = 0; i < msg->length; i++) {
         mcp2515_write(0x36 + i, msg->data[i]);      // TXB0D0-TXB0D7
     }
+    
+    // Clear any pending TX interrupt before sending
+    mcp2515_bit_modify(MCP_CANINTF, 0x1C, 0x00);  // Clear TX0IF, TX1IF, TX2IF
     
     // Request transmission
     mcp2515_request_to_send(MCP_RTS_TX0);

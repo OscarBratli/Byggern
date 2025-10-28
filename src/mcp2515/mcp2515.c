@@ -32,8 +32,8 @@ void mcp2515_reset(void) {
     SPI_Transfer(MCP_RESET);
     mcp2515_deselect();
     
-    // Shorter delay - just enough for reset
-    for(volatile uint16_t i = 0; i < 5000; i++);
+    // Wait for reset to complete
+    _delay_ms(10);
 }
 
 // Read a register from MCP2515
@@ -91,17 +91,15 @@ void mcp2515_bit_modify(uint8_t address, uint8_t mask, uint8_t data) {
 void mcp2515_set_mode(uint8_t mode) {
     mcp2515_bit_modify(MCP_CANCTRL, MODE_MASK, mode);
     
-    // Very short timeout - don't wait long
-    uint8_t timeout = 5;
+    // Wait for mode change to complete
+    uint8_t timeout = 100;
     while (timeout-- > 0) {
         uint8_t current_mode = mcp2515_read(MCP_CANSTAT) & MODE_MASK;
         if (current_mode == mode) {
             break;
         }
-        // Tiny delay
-        for(volatile uint16_t i = 0; i < 1000; i++);
+        _delay_ms(1);
     }
-    // Continue even if mode change times out
 }
 
 // Initialize MCP2515 for loopback mode (for testing)
@@ -115,19 +113,38 @@ void mcp2515_init_loopback(void) {
     // Set to configuration mode first
     mcp2515_set_mode(MODE_CONFIG);
     
-    // Configure bit timing for 125kbps (assuming 16MHz crystal)
-    // Bit timing: 16 TQ per bit, TQ = 0.5us, Bit time = 8us = 125kbps
-    // TQ = 2*(BRP+1)/F_OSC = 2*4/16MHz = 0.5us
-    // Segments: SYNC(1) + PROPAG(2) + PHASE1(7) + PHASE2(6) = 16 TQ
-    mcp2515_write(MCP_CNF1, 0x03);  // SJW=1, BRP=3 (BRP+1=4)
-    mcp2515_write(MCP_CNF2, 0xFA);  // BTLMODE=1, SAM=1, PHSEG1=7, PRSEG=2
-    mcp2515_write(MCP_CNF3, 0x05);  // PHSEG2=6 (PHSEG2+1=6)
+    // Configure bit timing for 250kbps (with 16MHz crystal)
+    // Bit rate calculation for MCP2515:
+    // - TQ (Time Quantum) = 2 * Tosc * (BRP + 1)
+    // - Bit Time = (SyncSeg + PropSeg + PS1 + PS2) * TQ
+    // - For 250 kbps with 16 MHz: Bit Time = 4 µs
+    //
+    // Configuration: BRP=1, 16 TQ per bit (MUST MATCH NODE 2!)
+    // - SyncSeg = 1 TQ (fixed)
+    // - PropSeg = 6 TQ (PRSEG register value = 5, actual = 6)
+    // - PS1 = 5 TQ (PHSEG1 register value = 4, actual = 5)
+    // - PS2 = 4 TQ (PHSEG2 register value = 3, actual = 4)
+    // - Total = 1 + 6 + 5 + 4 = 16 TQ
+    // - TQ = 2 * (1/16MHz) * (1+1) = 0.25 µs
+    // - Bit time = 16 * 0.25µs = 4µs = 250kbps ✓
+    // - Sample point = (1 + 6 + 5) / 16 = 75%
+    
+    mcp2515_write(MCP_CNF1, 0x01);  // SJW=1 (2TQ), BRP=1
+    mcp2515_write(MCP_CNF2, 0xB5);  // BTLMODE=1, SAM=0, PHSEG1=5, PRSEG=6 (0xB5 = 10110101)
+    mcp2515_write(MCP_CNF3, 0x03);  // SOF=0, WAKFIL=0, PHSEG2=4 (0x03 = 00000011)
+    
+    // Configure RX buffer 0 to accept ALL messages (turn off filters)
+    // RXB0CTRL: Accept all messages (standard + extended), rollover enabled
+    mcp2515_write(MCP_RXB0CTRL, 0x60);  // RXM[1:0] = 11 (turn off filters, accept all)
+    
+    // Configure RX buffer 1 to accept ALL messages
+    mcp2515_write(MCP_RXB1CTRL, 0x60);  // RXM[1:0] = 11 (turn off filters, accept all)
     
     // Set to loopback mode for testing
     mcp2515_set_mode(MODE_LOOPBACK);
 }
 
-// Initialize MCP2515 for normal mode (for actual CAN bus communication)
+// Initialize MCP2515 in NORMAL mode for actual CAN bus communication
 void mcp2515_init_normal(void) {
     // Initialize the driver
     mcp2515_init();
@@ -138,22 +155,19 @@ void mcp2515_init_normal(void) {
     // Set to configuration mode first
     mcp2515_set_mode(MODE_CONFIG);
     
-    // Configure bit timing for 125kbps (same as loopback mode)
-    // Bit timing: 16 TQ per bit, TQ = 0.5us, Bit time = 8us = 125kbps
-    // TQ = 2*(BRP+1)/F_OSC = 2*4/16MHz = 0.5us
-    // Segments: SYNC(1) + PROPAG(2) + PHASE1(7) + PHASE2(6) = 16 TQ
-    mcp2515_write(MCP_CNF1, 0x03);  // SJW=1, BRP=3 (BRP+1=4)
-    mcp2515_write(MCP_CNF2, 0xFA);  // BTLMODE=1, SAM=1, PHSEG1=7, PRSEG=2
-    mcp2515_write(MCP_CNF3, 0x05);  // PHSEG2=6 (PHSEG2+1=6)
+    // Configure bit timing for 250kbps (same as loopback - with 16MHz crystal)
+    // MUST MATCH LOOPBACK MODE CONFIGURATION ABOVE
+    mcp2515_write(MCP_CNF1, 0x01);  // SJW=1 (2TQ), BRP=1
+    mcp2515_write(MCP_CNF2, 0xB5);  // BTLMODE=1, SAM=0, PHSEG1=5, PRSEG=6
+    mcp2515_write(MCP_CNF3, 0x03);  // SOF=0, WAKFIL=0, PHSEG2=4
     
-    // Disable RX filters - accept all messages
-    // Set RXB0 to receive all messages (turn off filters)
-    mcp2515_write(MCP_RXB0CTRL, 0x60);  // RXM1:RXM0 = 11 (turn off filters, receive any message)
+    // Configure RX buffer 0 to accept ALL messages (turn off filters)
+    mcp2515_write(MCP_RXB0CTRL, 0x60);  // RXM[1:0] = 11 (turn off filters, accept all)
     
-    // Set RXB1 to receive all messages as well
-    mcp2515_write(MCP_RXB1CTRL, 0x60);  // RXM1:RXM0 = 11 (turn off filters, receive any message)
+    // Configure RX buffer 1 to accept ALL messages
+    mcp2515_write(MCP_RXB1CTRL, 0x60);  // RXM[1:0] = 11 (turn off filters, accept all)
     
-    // Set to normal mode for actual CAN bus communication
+    // Set to NORMAL mode for real CAN bus communication
     mcp2515_set_mode(MODE_NORMAL);
 }
 

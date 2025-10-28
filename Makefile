@@ -4,8 +4,8 @@ ifeq ($(DEPS_ONLY),1)
     # Use automatic dependency detection to find only required files
     SOURCE_FILES := $(shell ./find_deps.sh)
 else
-    # Default: compile all C files in src directory (excluding node2)
-    SOURCE_FILES := $(shell find src -name '*.c' -not -path 'src/node2/*')
+    # Default: compile all C files in src directory (excluding node-2)
+    SOURCE_FILES := $(shell find src -name '*.c' -not -path "src/node-2/*")
 endif
 
 # Set this flag to "yes" (no quotes) to use JTAG; otherwise ISP (SPI) is used

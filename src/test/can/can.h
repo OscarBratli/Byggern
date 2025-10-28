@@ -21,4 +21,5 @@
 void can_test_setup(void);
 void can_test_loop(void);
 void can_test_loop_continuous(void);
-
+void can_test_loop_node2(void);           // Test Node 1 <-> Node 2 communication
+void test_can_loopback_continuous(void); 

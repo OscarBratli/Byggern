@@ -8,9 +8,8 @@ MCUTYPE = __SAM3X8E__
 SOURCE_FILES = \
 	$(BOOTUP) \
 	main.c \
-	servo_test.c \
 	uart.c \
-	can.c
+	can.c \
 #   filename1.c \
 #   filename2.c \
 #	filenameN.c
@@ -63,8 +62,8 @@ debug: $(ELF)
 .PHONY: flash
 flash: $(ELF)
 	#./sam/write_bin.sh sam/openocd.cfg $(BUILD_DIR)/main.elf
-	if pgr openocd; then killall -s 9 openocd; fi
-	openocd -f sam/openocd.cfg -c "program ${BUILD_DIR}/main.elf verify reset exit"
+	if pgrep openocd; then killall -s 9 openocd; fi
+	/opt/openocd/bin/openocd -f sam/openocd.cfg -c "program ${BUILD_DIR}/main.elf verify reset exit"
 
 
 # pull in dependencies

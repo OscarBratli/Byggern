@@ -15,6 +15,7 @@ typedef struct {
 
 // CAN driver function declarations
 void can_init(void);                                    // Initialize CAN controller in loopback mode
+void can_init_normal(void);                             // Initialize CAN controller in normal mode (real CAN bus)
 uint8_t can_send_message(can_message_t* msg);          // Send a CAN message
 uint8_t can_receive_message(can_message_t* msg);       // Receive a CAN message
 uint8_t can_message_pending(void);                     // Check if message is pending
