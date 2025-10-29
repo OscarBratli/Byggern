@@ -1,9 +1,15 @@
 #include "can.h"
+#include "joystick/joystick.h"
+#include "adc/adc.h"
 
 void can_test_setup(void) 
 {
     uart_init(MYUBRR);
     spi_setup();
+    
+    // Initialize ADC and joystick for CAN testing
+    adc_init();         // ADC needed for joystick readings
+    joystick_init();    // Initialize joystick for CAN testing
 }
 
 // Test CAN message structure and ID handling
@@ -426,4 +432,89 @@ void can_test_loop_node2(void)
     
     // Run Node 1 <-> Node 2 communication test
     test_can_node2_communication();
+}
+
+/*
+ * Checkpoint #8: Joystick Driver over CAN Bus
+ * Sends real joystick position from Node 1 to Node 2 over CAN
+ */
+void send_joystick_over_can(void) {
+    // Read current joystick position
+    joystick_pos_t joystick = joystick_get_position();
+    slider_pos_t slider = slider_get_position();
+    
+    // Create CAN message with joystick data
+    can_message_t joystick_msg = {
+        .id = 0x100,        // Joystick data message ID
+        .length = 5,        // 5 bytes: joy_x, joy_y, joy_btn, slider_x, slider_y
+        .data = {
+            joystick.x,      // Joystick X (0-100%)
+            joystick.y,      // Joystick Y (0-100%)  
+            joystick.button, // Button state (0/1)
+            slider.x,        // Slider X (0-255)
+            slider.y         // Slider Y (0-255)
+        }
+    };
+    
+    // Send joystick data to Node 2
+    if (can_send_message(&joystick_msg)) {
+        printf_P(PSTR("JOY->Node2: [X:%d Y:%d Btn:%d] [SlX:%d SlY:%d] ✓\r\n"), 
+                 joystick.x, joystick.y, joystick.button, slider.x, slider.y);
+    } else {
+        printf_P(PSTR("JOY->Node2: Send failed ✗\r\n"));
+    }
+}
+
+/*
+ * Test loop that sends real joystick data over CAN (Checkpoint #8)
+ * This replaces the fixed test pattern with actual joystick readings
+ */
+void test_joystick_can_communication(void) {
+    static uint32_t message_count = 0;
+    static uint8_t send_delay = 0;
+    static bool joystick_can_initialized = false;
+    
+    // Initialize CAN for normal mode once (same as can_test_loop_node2)
+    if (!joystick_can_initialized) {
+        _delay_ms(2000);  // Wait 2 seconds after startup
+        printf_P(PSTR("\r\n=== Checkpoint #8: Joystick over CAN Test ===\r\n"));
+        printf_P(PSTR("Initializing MCP2515...\r\n"));
+        test_mcp2515();
+        
+        // Initialize CAN in NORMAL mode for real CAN bus
+        printf_P(PSTR("Initializing CAN in NORMAL mode (125 kbps)...\r\n"));
+        can_init_normal();
+        
+        // Verify mode
+        uint8_t canstat = mcp2515_read(MCP_CANSTAT);
+        uint8_t mode = canstat & MODE_MASK;
+        printf_P(PSTR("MCP2515 Mode: "));
+        if (mode == MODE_NORMAL) {
+            printf_P(PSTR("NORMAL ✓\r\n"));
+        } else {
+            printf_P(PSTR("ERROR (0x%02X)\r\n"), mode);
+        }
+        
+        printf_P(PSTR("Joystick CAN ready!\r\n"));
+        printf_P(PSTR("Move joystick and slider to see real-time data\r\n\r\n"));
+        joystick_can_initialized = true;
+        return;
+    }
+    
+    // Send joystick data every 5 calls (twice per second with 100ms delay)
+    if (send_delay >= 5) {
+        message_count++;
+        
+        // Display message counter
+        printf_P(PSTR("=== Joystick CAN Message #%lu ===\r\n"), message_count);
+        
+        // Send actual joystick data
+        send_joystick_over_can();
+        
+        printf_P(PSTR("\r\n"));
+        send_delay = 0;
+    }
+    send_delay++;
+    
+    _delay_ms(100);  // 100ms delay between iterations
 }

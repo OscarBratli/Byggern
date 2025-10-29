@@ -10,9 +10,7 @@ SOURCE_FILES = \
 	main.c \
 	uart.c \
 	can.c \
-#   filename1.c \
-#   filename2.c \
-#	filenameN.c
+	test/task6.c
 
 # Feel free to ignore anything below this line
 VPATH:= $(dir $(SOURCE_FILES))
