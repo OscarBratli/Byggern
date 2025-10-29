@@ -6,7 +6,7 @@
 
 void setup(void) 
 {
-     can_test_setup();
+    //can_test_setup();
     // adc_test_setup();
     // echo_test_setup();
     // sram_test_setup();
@@ -20,7 +20,7 @@ void loop(void)
     // adc_test_loop();
     // echo_test_loop();
     // sram_test_loop();
-    menu_test_loop();
+    //menu_test_loop();
 }
 
 int main(void)
@@ -29,7 +29,7 @@ int main(void)
     
     while (1) {
         loop(); 
-        _delay_ms(100);
+        
     }
     return 0; 
 }

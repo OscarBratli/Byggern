@@ -345,56 +345,36 @@ void can_test_loop_continuous(void)
 }
 
 // Test CAN communication with Node 2 in NORMAL mode
+// NODE 1 = SEND ONLY (simple test)
 void test_can_node2_communication(void) {
-    static uint8_t test_counter = 0;
     static uint32_t tx_count = 0;
-    static uint32_t rx_count = 0;
     static uint8_t send_delay = 0;
     
     // Only send every 10 calls (once per second with 100ms delay)
     if (send_delay >= 10) {
-        // Create test message to send to Node 2
+        // Create simple test message to send to Node 2
         can_message_t tx_msg = {
-            .id = 0x100 + (test_counter & 0x0F),  // ID from 0x100-0x10F
-            .length = 4,
-            .data = {test_counter, test_counter + 10, test_counter + 20, test_counter + 30}
+            .id = 0x123,  // Fixed simple ID
+            .length = 4,  // 4 bytes
+            .data = {0xAA, 0xBB, 0xCC, 0xDD}  // Fixed simple pattern
         };
         
-        printf_P(PSTR("TX->Node2: ID=0x%03X [%02X %02X %02X %02X] "), 
-                 tx_msg.id, tx_msg.data[0], tx_msg.data[1], tx_msg.data[2], tx_msg.data[3]);
+        printf_P(PSTR("TX->Node2: ID=0x%03X [AA BB CC DD] "), tx_msg.id);
         
         // Send message to Node 2
         if (can_send_message(&tx_msg)) {
             tx_count++;
-            printf_P(PSTR("✓ Sent (TX:%lu, RX:%lu)\r\n"), tx_count, rx_count);
+            printf_P(PSTR("✓ Sent (TX:%lu)\r\n"), tx_count);
         } else {
             // DIAGNOSTIC: Why did send fail?
-            uint8_t ctrl = mcp2515_read(MCP_TXB0CTRL);
-            uint8_t eflg = mcp2515_read(MCP_EFLG);
             uint8_t tec = mcp2515_read(MCP_TEC);
             uint8_t rec = mcp2515_read(MCP_REC);
-            printf_P(PSTR("✗ Send failed [CTRL:0x%02X EFLG:0x%02X TEC:%d REC:%d]\r\n"),
-                     ctrl, eflg, tec, rec);
+            printf_P(PSTR("✗ Send failed [TEC:%d REC:%d]\r\n"), tec, rec);
         }
         
-        test_counter++;
         send_delay = 0;
     }
     send_delay++;
-    
-    // Check for messages from Node 2
-    if (can_message_pending()) {
-        can_message_t rx_msg;
-        if (can_receive_message(&rx_msg)) {
-            rx_count++;
-            printf_P(PSTR("RX<-Node2: ID=0x%03X ["), rx_msg.id);
-            for (uint8_t i = 0; i < rx_msg.length; i++) {
-                printf_P(PSTR("%02X"), rx_msg.data[i]);
-                if (i < rx_msg.length - 1) printf_P(PSTR(" "));
-            }
-            printf_P(PSTR("] (TX:%lu, RX:%lu)\r\n"), tx_count, rx_count);
-        }
-    }
     
     _delay_ms(100);  // 100ms delay between iterations
 }

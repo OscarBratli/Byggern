@@ -1,7 +1,7 @@
 
 #include "sam.h"
 #include "can.h"
-#include <stdio.h>
+#include <stdio.h> 
 
 void can_printmsg(CanMsg m){
     printf("CanMsg(id:%d, length:%d, data:{", m.id, m.length);
@@ -15,8 +15,8 @@ void can_printmsg(CanMsg m){
 }
 
 
-#define txMailbox 1
-#define rxMailbox 0  // Messages arrive in mailbox 0!
+#define txMailbox 0
+#define rxMailbox 1
 
 
 void can_init(CanInit init, uint8_t rxInterrupt){
@@ -48,23 +48,16 @@ void can_init(CanInit init, uint8_t rxInterrupt){
     
 
 
-    // Configure mailboxes - ORDER MATTERS!
-    // According to datasheet and lab lecture: Configure RX mailbox FIRST!
+    // Configure mailboxes
+    // transmit
+    CAN0->CAN_MB[txMailbox].CAN_MID = CAN_MID_MIDE;
+    CAN0->CAN_MB[txMailbox].CAN_MMR = CAN_MMR_MOT_MB_TX;
     
-    // RX Mailbox (mailbox 0): Configure to accept all incoming messages
-    CAN0->CAN_MB[rxMailbox].CAN_MMR = CAN_MMR_MOT_MB_RX;  // Set as RX mode FIRST
-    CAN0->CAN_MB[rxMailbox].CAN_MAM = 0;  // Mask = 0 means "don't care" (accept all)
-    CAN0->CAN_MB[rxMailbox].CAN_MID = 0;  // Standard ID mode (MIDE = 0)
-    CAN0->CAN_MB[rxMailbox].CAN_MCR = CAN_MCR_MTCR;  // Issue transfer command
-    
-    // TX Mailbox (mailbox 1): Configure as TX only with dummy data
-    CAN0->CAN_MB[txMailbox].CAN_MMR = CAN_MMR_MOT_MB_TX;  // Set as TX mode
-    CAN0->CAN_MB[txMailbox].CAN_MAM = 0;  // Mask not used for TX but set to 0
-    CAN0->CAN_MB[txMailbox].CAN_MID = CAN_MID_MIDvA(0x100);  // Dummy ID
-    CAN0->CAN_MB[txMailbox].CAN_MDL = 0;  // Dummy data low
-    CAN0->CAN_MB[txMailbox].CAN_MDH = 0;  // Dummy data high
-    CAN0->CAN_MB[txMailbox].CAN_MCR = CAN_MCR_MDLC(0) | CAN_MCR_MTCR;  // 0 length, transfer
-    
+    // receive
+    CAN0->CAN_MB[rxMailbox].CAN_MAM = 0; // Accept all messages
+    CAN0->CAN_MB[rxMailbox].CAN_MID = CAN_MID_MIDE;
+    CAN0->CAN_MB[rxMailbox].CAN_MMR = CAN_MMR_MOT_MB_RX;
+    CAN0->CAN_MB[rxMailbox].CAN_MCR |= CAN_MCR_MTCR;
     if(rxInterrupt){
         // Enable interrupt on receive
         CAN0->CAN_IER |= (1 << rxMailbox); 
@@ -78,19 +71,19 @@ void can_init(CanInit init, uint8_t rxInterrupt){
 
 
 void can_tx(CanMsg m){
-    // Add timeout to prevent infinite blocking
-    uint32_t timeout = 100000;
-    while(!(CAN0->CAN_MB[txMailbox].CAN_MSR & CAN_MSR_MRDY) && timeout--) {
-        // Wait for mailbox to be ready with timeout
+    // Check if mailbox is ready with timeout
+    uint32_t timeout = 1000000; // Large timeout counter
+    while(!(CAN0->CAN_MB[txMailbox].CAN_MSR & CAN_MSR_MRDY)) {
+        timeout--;
+        if (timeout == 0) {
+            printf("ERROR: TX mailbox timeout! MSR=0x%08lX\n", CAN0->CAN_MB[txMailbox].CAN_MSR);
+            printf("CAN Status: SR=0x%08lX, ECR=0x%08lX\n", CAN0->CAN_SR, CAN0->CAN_ECR);
+            return; // Don't send if mailbox stuck
+        }
     }
     
-    if (timeout == 0) {
-        // Mailbox not ready - abort to prevent lockup
-        return;
-    }
-    
-    // Set message ID and use STANDARD ID (CAN 2.0A, 11-bit)
-    CAN0->CAN_MB[txMailbox].CAN_MID = CAN_MID_MIDvA(m.id);  // No MIDE bit for standard ID
+    // Set message ID and use CAN 2.0B protocol
+    CAN0->CAN_MB[txMailbox].CAN_MID = CAN_MID_MIDvA(m.id) | CAN_MID_MIDE ;
         
     // Coerce maximum 8 byte length
     m.length = m.length > 8 ? 8 : m.length;
@@ -104,28 +97,12 @@ void can_tx(CanMsg m){
 }
 
 uint8_t can_rx(CanMsg* m){
-    // Debug: Check all mailboxes and status register
-    static int debug_counter = 0;
-    if (++debug_counter >= 50) {  // Print every 50 calls (every 5 seconds)
-        uint32_t sr = CAN0->CAN_SR;
-        uint32_t mb0_msr = CAN0->CAN_MB[0].CAN_MSR;
-        uint32_t mb1_msr = CAN0->CAN_MB[1].CAN_MSR;
-        uint32_t mb0_mmr = CAN0->CAN_MB[0].CAN_MMR;
-        uint32_t mb1_mmr = CAN0->CAN_MB[1].CAN_MMR;
-        
-        printf("[RX DEBUG] SR=0x%08lX MB0_MSR=0x%08lX MB1_MSR=0x%08lX\n", sr, mb0_msr, mb1_msr);
-        printf("           MB0_MMR=0x%08lX (MOT=%lu) MB1_MMR=0x%08lX (MOT=%lu)\n", 
-               mb0_mmr, (mb0_mmr >> 24) & 0x7, mb1_mmr, (mb1_mmr >> 24) & 0x7);
-        debug_counter = 0;
-    }
-    
-    // Check if our configured RX mailbox has a message ready
     if(!(CAN0->CAN_MB[rxMailbox].CAN_MSR & CAN_MSR_MRDY)){
         return 0;
     }
 
-    // Get message ID (use uint16_t for 11-bit IDs up to 0x7FF)
-    m->id = (uint16_t)((CAN0->CAN_MB[rxMailbox].CAN_MID & CAN_MID_MIDvA_Msk) >> CAN_MID_MIDvA_Pos);
+    // Get message ID
+    m->id = (uint8_t)((CAN0->CAN_MB[rxMailbox].CAN_MID & CAN_MID_MIDvA_Msk) >> CAN_MID_MIDvA_Pos);
         
     // Get data length
     m->length = (uint8_t)((CAN0->CAN_MB[rxMailbox].CAN_MSR & CAN_MSR_MDLC_Msk) >> CAN_MSR_MDLC_Pos);

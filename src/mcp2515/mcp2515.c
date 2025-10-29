@@ -155,11 +155,11 @@ void mcp2515_init_normal(void) {
     // Set to configuration mode first
     mcp2515_set_mode(MODE_CONFIG);
     
-    // Configure bit timing for 250kbps (same as loopback - with 16MHz crystal)
-    // MUST MATCH LOOPBACK MODE CONFIGURATION ABOVE
-    mcp2515_write(MCP_CNF1, 0x01);  // SJW=1 (2TQ), BRP=1
-    mcp2515_write(MCP_CNF2, 0xB5);  // BTLMODE=1, SAM=0, PHSEG1=5, PRSEG=6
-    mcp2515_write(MCP_CNF3, 0x03);  // SOF=0, WAKFIL=0, PHSEG2=4
+    // Working 125 kbps configuration from elinemha/TTK4155 repo
+    // 16MHz / (2 * (BRP+1) * 16TQ) = 16MHz / (2 * 4 * 16) = 125 kbps exactly
+    mcp2515_write(MCP_CNF1, 0x03);  // SJW=1, BRP=3 (divisor=4)
+    mcp2515_write(MCP_CNF2, 0xB1);  // BTLMODE=1, SAM=0, PHSEG1=7, PRSEG=2  
+    mcp2515_write(MCP_CNF3, 0x05);  // SOF=0, WAKFIL=0, PHSEG2=6
     
     // Configure RX buffer 0 to accept ALL messages (turn off filters)
     mcp2515_write(MCP_RXB0CTRL, 0x60);  // RXM[1:0] = 11 (turn off filters, accept all)

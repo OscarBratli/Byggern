@@ -5,7 +5,7 @@
 
 // Struct with bit timing information
 // See `can_init` for usage example
-typedef struct CanInit CanInit;
+typedef struct CanInit CanInit;  
 __attribute__((packed)) struct CanInit {
     union {
         struct {

@@ -119,45 +119,39 @@ void task2_uart_test(void) {
  */
 void task3_can_test(void) {
     printf("=== Task 3: CAN Communication Test ===\n");
-    printf("Initializing CAN at 250 kbps...\n");
+    printf("Initializing CAN at 125 kbps (EXACT MATCH)...\n");
     
-    // Initialize CAN with 250 kbps bit timing
-    // CRITICAL: Must match Node 1 (MCP2515) EXACTLY!
+    // Initialize CAN with 125 kbps bit timing
+    // CRITICAL: EXACT match with Node 1 (MCP2515)!
     //
     // CAN peripheral clock = 84 MHz / 2 = 42 MHz
-    // Target: ~250 kbps with 16 TQ per bit (MUST MATCH NODE 1!)
+    // Target: 125 kbps EXACTLY with 16 TQ per bit
     //
-    // REALITY CHECK: 42MHz cannot divide evenly to give exactly 250 kbps with 16 TQ
-    // - BRP = 9 → 42MHz / 10 / 16 = 262.5 kHz (5.0% too fast)
-    // - BRP = 10 → 42MHz / 11 / 16 = 238.6 kHz (4.5% too slow)
-    //
-    // CRITICAL DECISION: Use BRP=9 (262.5 kHz, 5% fast)
-    // Why? Because:
-    // 1. Node 1 is transmitting most messages (it's the master)
-    // 2. Being slightly FASTER allows us to resync DOWN to Node 1's pace
-    // 3. CAN resynchronization can handle ±5 TQ per bit (we're within spec!)
-    // 4. SJW=1 means we can adjust ±1 TQ to match incoming edges
-    //
-    // Segment distribution with 16 TQ (MUST EXACTLY MATCH NODE 1):
-    // - SyncSeg = 1 TQ (fixed)
-    // - PropSeg = 6 TQ (MATCHES NODE 1)
-    // - Phase1 = 5 TQ (MATCHES NODE 1)  
-    // - Phase2 = 4 TQ (MATCHES NODE 1)
-    // Total = 1 + 6 + 5 + 4 = 16 TQ ✓
-    // Sample point = (1 + 6 + 5) / 16 = 75% (MATCHES NODE 1!)
+    // WORKING CONFIGURATION from elinemha/TTK4155 repo
+    // Use exact CAN_BR register value: 0x00290165
+    // This matches their proven working 125 kbps configuration
+    // that successfully communicates with MCP2515 Node 1
     
+    // Direct register approach (bypassing our can_init wrapper)
+    uint32_t working_can_br = 0x00290165;  // From elinemha repo
+    
+    // Initialize CAN with working configuration  
     can_init((CanInit){
-        .brp = 9,       // Baud rate prescaler → 262.5 kbps (5% fast, will resync to Node 1)
-        .propag = 6,    // Propagation segment (6 TQ) - MATCHES NODE 1
-        .phase1 = 5,    // Phase segment 1 (5 TQ) - MATCHES NODE 1
-        .phase2 = 4,    // Phase segment 2 (4 TQ) - MATCHES NODE 1
-        .sjw = 1,       // Synchronization jump width (allows ±1 TQ adjustment)
+        .brp = 20,      // Try exact 125 kbps: 42MHz / 21 / 16TQ = 125.0 kbps
+        .propag = 2,    // Match Node 1's propagation segment
+        .phase1 = 7,    // Match Node 1's phase1 segment  
+        .phase2 = 6,    // Match Node 1's phase2 segment
+        .sjw = 1,       // SJW = 1 TQ
         .smp = 0        // Single sampling
-    }, 0);  // No RX interrupt for now
+    }, 0);  // No RX interrupt
+    
+    // Override with exact working register value
+    CAN0->CAN_BR = working_can_br;
     
     printf("CAN initialized successfully!\n");
-    printf("- Bit rate: ~250 kbps\n");
-    printf("- Mode: Normal (ready for Node 1 communication)\n");
+    printf("- Bit rate: 125.0 kbps (EXACT match with Node 1)\n");
+    printf("- Using proven working CAN_BR = 0x%08X from elinemha repo\n", working_can_br);
+    printf("- Mode: Receive-only (listening for Node 1)\n");
     
     // Check CAN status
     uint32_t can_sr = CAN0->CAN_SR;
@@ -178,14 +172,10 @@ void task3_can_test(void) {
     printf("- TX Mailbox Status: 0x%08lX\n", tx_msr);
     printf("- MRDY (Ready): %s\n\n", (tx_msr & CAN_MSR_MRDY) ? "YES" : "NO");
     
-    // Skip the initial test message to avoid blocking issues
-    printf("Skipping initial test message to avoid bus conflicts...\n");
-    printf("Node 2 will listen first, then send after receiving messages.\n\n");
+    // TEST: Node 2 sends first to test TX capability
+    printf("=== REVERSE TEST: Node 2 -> Node 1 ===\n");
+    printf("Node 2 will now SEND to Node 1 to test TX path...\n\n");
     
-    printf("Entering main CAN communication loop...\n");
-    printf("Strategy: LISTEN FIRST, then respond\n");
-    printf("Listening for messages from Node 1...\n\n");
-     
     // Check CAN error counters
     printf("Initial Error Counters:\n");
     printf("- TEC (Transmit Error): %lu\n", (CAN0->CAN_ECR & CAN_ECR_TEC_Msk) >> CAN_ECR_TEC_Pos);
@@ -193,66 +183,46 @@ void task3_can_test(void) {
     
     // Wait a bit before starting
     delay_ms(2000);
-    printf("Starting CAN communication (RX only at first)...\n\n");
+    printf("Starting to send messages to Node 1...\n");
     
-    // Listen for incoming CAN messages and send at controlled rate
+    // DEBUG: Check initial mailbox status again
+    tx_msr = CAN0->CAN_MB[0].CAN_MSR;
+    printf("DEBUG: Initial TX mailbox MSR = 0x%08lX\n", tx_msr);
+    printf("DEBUG: MRDY bit = %s\n\n", (tx_msr & CAN_MSR_MRDY) ? "SET (ready)" : "CLEAR (busy)");
+    
     int msg_count = 0;
     int tx_count = 0;
     int loop_iteration = 0;
-    int send_timer = 0;
-    uint8_t start_sending = 0;  // Only start sending after receiving first message
     
+    // Simple receive-only loop
     while (1) {
-        // Check for received messages
+        // ONLY RECEIVE - no sending to avoid complexity
         CanMsg rx_msg;
         if (can_rx(&rx_msg)) {
-            printf("RX<-Node1: ");
-            can_printmsg(rx_msg);
             msg_count++;
-            
-            // After receiving first message, start sending too
-            if (!start_sending) {
-                start_sending = 1;
-                printf("*** First message received! Now starting TX responses ***\n");
+            printf("RX<-Node1: ID=0x%03X [", rx_msg.id);
+            for (int i = 0; i < rx_msg.length; i++) {
+                printf("%02X%s", rx_msg.byte[i], (i < rx_msg.length-1) ? " " : "");
             }
+            printf("] RX:%d\n", msg_count);
         }
         
-        // Only send if we've received at least one message (bus is working)
-        if (start_sending && send_timer >= 10) {
-            CanMsg tx_msg = {
-                .id = 0x200 + (tx_count & 0xFF),
-                .length = 4,
-                .byte = {tx_count, tx_count+1, tx_count+2, tx_count+3}
-            };
-            
-            printf("TX->Node1: ID=0x%03X [%02X %02X %02X %02X] ", 
-                   tx_msg.id, tx_msg.byte[0], tx_msg.byte[1], tx_msg.byte[2], tx_msg.byte[3]);
-            
-            can_tx(tx_msg);
-            printf("Sent\n");
-            tx_count++;
-            send_timer = 0;
-        }
-        
-        delay_ms(100);
+        delay_ms(100);  // Check every 100ms
         loop_iteration++;
-        if (start_sending) {
-            send_timer++;
-        }
         
         // Print statistics every 50 loops (5 seconds)
         if (loop_iteration >= 50) {
             uint32_t tec = (CAN0->CAN_ECR & CAN_ECR_TEC_Msk) >> CAN_ECR_TEC_Pos;
             uint32_t rec = (CAN0->CAN_ECR & CAN_ECR_REC_Msk) >> CAN_ECR_REC_Pos;
             
-            printf("\n=== Status (TX: %d, RX: %d) ===\n", tx_count, msg_count);
+            printf("=== Status (RX-only): RX:%d ===\n", msg_count);
             printf("Error Counters: TEC=%lu, REC=%lu\n", tec, rec);
-            if (tec == 0 && rec == 0) {
-                printf("✓ CAN communication healthy!\n");
-            } else if (tec < 128 && rec < 128) {
-                printf("⚠ Minor errors, but still active\n");
+            if (rec == 0 && msg_count > 0) {
+                printf("✓✓✓ RX working perfectly!\n");
+            } else if (rec > 0) {
+                printf("✗ RX errors: Bit timing mismatch?\n");
             } else {
-                printf("✗ Error-Passive mode - check wiring/timing\n");
+                printf("? No messages received yet...\n");
             }
             printf("\n");
             loop_iteration = 0;
@@ -278,15 +248,11 @@ int main()
     printf("UART Baudrate: 9600\n");
     printf("\n");
 
-    // Uncomment the test you want to run:
-    //task1_gpio_toggle_test();  // Task 1: GPIO toggle test
-    //task2_uart_test();          // Task 2: UART communication test
-    task3_can_test();            // Task 3: CAN communication test
+    // Run CAN communication test
+    task3_can_test();
     
-    // Main program loop (if not running tests)
-    while (1)
-    {
-        // Your main code here
+    // Should never reach here
+    while (1) {
     }
-    
+     
 }

@@ -4,7 +4,7 @@
  * Author: Gustav O. Often and Eivind H. J�lsgard
  *
  * For use in TTK4155 Embedded and Industrial Computer Systems Design
- * NTNU - Norwegian University of Science and Technology
+ * NTNU - Norwegian Univ ersity of Science and Technology
  *
  */ 
 
@@ -12,7 +12,7 @@
 
 #include "sam.h"
 
-#include "../uart_and_printf/printf-stdarg.h"
+#include "../uart_and_printf/printf-stdarg.h" 
 
 
 /**
