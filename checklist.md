@@ -1,33 +1,17 @@
-1. The timer/counter module of the ATsam is a versatile module and can generate timer inter-
-rupts, PWM signals and more. Create a driver for the timer/counter module which allows
-you to use the PWM functionality. If you also implement the timer interrupt it might save
-you time when implementing the controller since most of you will most likely want to use
-timer interrupt there. You shall use the PWM module for the arduino due instead.
-
-2. Create a PWM and/or servo driver which will use your controller output as an input and
-calculate the correct duty cycle/on-time which you will provide to your timer/counter driver.
-Also implement safety features which will never let the PWM go out of the servo’s valid
-range.
-
-3. Use an oscilloscope to verify that your driver in fact never goes outside the valid range of the
-servo (0.9-2.1ms).
-
-4. Connect the servo on the game board to the PWM output on top of the Arduino shield.
-
-5. Use the joystick position sent from Node 1 to control the servo position.
-
-6. “Goals” are registered by blocking an IR beam. Install the IR-LED and IR-photodiode in
-the two holes located at the side walls of the game board.
-
-7. Connect the IR diodes in a way that makes it possible to detect when the IR beam is blocked.
-An example is given in Figure 25. You might consider implementing an analog filter. Check
-that the signal is correct before connecting it to the microcontroller
-
-8. As the IR signal is noisy and unstable you need to use the internal ADC of the Arduino to
-read the signal and filter out valid signal states.
-
-9. Create a driver that will read the IR signal. You may want to implement a digital filter to
-reduce noise.
-
-10. Create a function that is able to count the score. This will later be used for the game
-applicatio
+1.  Connect the encoder input to the motor encoder by using the designated cable. Use TC2
+of the ATSAM3X8E in quadrature decoder mode and verify that it reads and decodes the
+motor motion.
+2. Connect the shield’s 4mm jacks to a 12V power supply, and the shield’s 2mm jacks to the
+motor.
+3. Develop code so that the motor speed and direction can be set by joystick position (x-axis
+for motor, y-axis for servo) using the the A3959 motor driver in phase/enable mode. You
+should now be able to play the game, although it is hard to control.
+4. Create a position based controller (closed-loop, using feedback from the encoder) for the
+motor so that the position is easier to control. A PI controller should be sufficient. Exact
+tuning is not important, but the game must be playable with the controller.
+5. Being a course/lab provided by the cybernetics department, a closed-loop/feedback position
+based controller is the minimum requirement for approval of the exercise and the
+lab exam. If you prefer a speed based controller, a position based controller must still be
+implemented.
+6. Extend the code to include solenoid triggering when one of the joystick buttons is pushed.
+It should generate a pulse just long enough to hit the ball.

@@ -13,8 +13,13 @@ SOURCE_FILES = \
 	pwm.c \
 	servo.c \
 	ir_sensor.c \
+	encoder.c \
+	motor.c \
+	pi_controller.c \
+	time.c \
 	test/task6.c \
-	test/task7.c
+	test/task7.c \
+	test/task8.c
 
 # Feel free to ignore anything below this line
 VPATH:= $(dir $(SOURCE_FILES))
