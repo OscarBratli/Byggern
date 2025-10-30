@@ -445,7 +445,7 @@ void send_joystick_over_can(void) {
     
     // Create CAN message with joystick data
     can_message_t joystick_msg = {
-        .id = 0x100,        // Joystick data message ID
+        .id = 0x00,         // Joystick data message ID (Node 2 expects 0x00!)
         .length = 5,        // 5 bytes: joy_x, joy_y, joy_btn, slider_x, slider_y
         .data = {
             joystick.x,      // Joystick X (0-100%)
@@ -458,8 +458,7 @@ void send_joystick_over_can(void) {
     
     // Send joystick data to Node 2
     if (can_send_message(&joystick_msg)) {
-        printf_P(PSTR("JOY->Node2: [X:%d Y:%d Btn:%d] [SlX:%d SlY:%d] ✓\r\n"), 
-                 joystick.x, joystick.y, joystick.button, slider.x, slider.y);
+        // Success - no printf to avoid slowing down transmission
     } else {
         printf_P(PSTR("JOY->Node2: Send failed ✗\r\n"));
     }
@@ -501,20 +500,12 @@ void test_joystick_can_communication(void) {
         return;
     }
     
-    // Send joystick data every 5 calls (twice per second with 100ms delay)
-    if (send_delay >= 5) {
-        message_count++;
-        
-        // Display message counter
-        printf_P(PSTR("=== Joystick CAN Message #%lu ===\r\n"), message_count);
-        
-        // Send actual joystick data
-        send_joystick_over_can();
-        
-        printf_P(PSTR("\r\n"));
-        send_delay = 0;
-    }
-    send_delay++;
+    // Send joystick data as fast as possible for responsive servo control
+    message_count++;
     
-    _delay_ms(100);  // 100ms delay between iterations
+    // Send actual joystick data (no printf to avoid slowing down)
+    send_joystick_over_can();
+    
+    // Minimal delay for reasonable update rate (~50Hz = 20ms)
+    _delay_ms(20);
 }

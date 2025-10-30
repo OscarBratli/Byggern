@@ -31,7 +31,7 @@ int main(void)
     
     while (1) {
         loop(); 
-        _delay_ms(10);  // Small delay to avoid tight looping 
+        // No delay needed - joystick test has its own timing
     }
     return 0; 
 }

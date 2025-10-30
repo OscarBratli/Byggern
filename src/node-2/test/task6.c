@@ -15,7 +15,9 @@
 #include "sam.h"
 #include "uart.h"
 #include "can.h"
-#include "../task6.h"
+#include "task6.h"
+#include "../pwm.h"
+#include "../servo.h"
 
 // Simple delay function (not accurate, just for demonstration)
 void delay_ms(uint32_t ms) {
@@ -350,6 +352,186 @@ void task3_can_test_with_joystick_decoder(void) {
             }
             printf("\n");
             loop_iteration = 0;
+        }
+    }
+}
+
+/*
+ * Task 7: PWM Signal Test
+ * Tests the PWM Controller directly to verify signal generation
+ * Use oscilloscope to verify 50Hz PWM with variable pulse width
+ */
+void task7_pwm_test(void) {
+    printf("=== Task 7: PWM Controller Test ===\n");
+    printf("This test verifies PWM signal generation using the PWM Controller\n");
+    printf("Connect oscilloscope to PWM output pin to verify signal\n\n");
+    
+    // Initialize PWM
+    if (!pwm_init()) {
+        printf("ERROR: PWM initialization failed!\n");
+        return;
+    }
+    
+    printf("PWM initialized successfully!\n");
+    pwm_print_status();
+    
+    printf("Testing different pulse widths...\n");
+    printf("Watch oscilloscope for changing pulse widths:\n\n");
+    
+    uint16_t test_pulses[] = {900, 1200, 1500, 1800, 2100};  // Test pulse widths
+    const char* positions[] = {"MIN", "25%", "CENTER", "75%", "MAX"};
+    
+    int test_count = 0;
+    while (1) {
+        for (int i = 0; i < 5; i++) {
+            printf("Setting PWM: %s position (%d us)\n", positions[i], test_pulses[i]);
+            
+            if (pwm_set_pulse_width_us(test_pulses[i])) {
+                printf("✓ PWM set successfully\n");
+            } else {
+                printf("✗ PWM set failed\n");
+            }
+            
+            delay_ms(2000);  // Hold each position for 2 seconds
+        }
+        
+        test_count++;
+        printf("\n=== Test cycle %d complete ===\n", test_count);
+        printf("Pulse width range: 0.9ms - 2.1ms (50Hz period)\n");
+        printf("Press Ctrl+C to stop\n\n");
+        
+        delay_ms(1000);  // Pause between cycles
+    }
+}
+
+/*
+ * Task 7: Servo Control Test  
+ * Tests the servo driver with different positions
+ */
+void task7_servo_test(void) {
+    printf("=== Task 7: Servo Control Test ===\n");
+    printf("Testing servo control with safety features\n");
+    printf("Servo will move through different positions\n\n");
+    
+    // Initialize servo system
+    if (!servo_init()) {
+        printf("ERROR: Servo initialization failed!\n");
+        return;
+    }
+    
+    printf("Servo initialized successfully!\n");
+    servo_print_status();
+    
+    printf("Testing servo positions...\n");
+    printf("IMPORTANT: Verify servo moves smoothly without stuttering\n\n");
+    
+    uint8_t test_positions[] = {0, 25, 50, 75, 100, 50};  // Test positions
+    const char* position_names[] = {"MIN", "25%", "CENTER", "75%", "MAX", "CENTER"};
+    
+    int test_count = 0;
+    while (1) {
+        for (int i = 0; i < 6; i++) {
+            printf("Moving servo to %s position (%d%%)\n", 
+                   position_names[i], test_positions[i]);
+            
+            if (servo_set_position(test_positions[i])) {
+                printf("✓ Servo moved successfully\n");
+                servo_print_status();
+            } else {
+                printf("✗ Servo movement failed\n");
+            }
+            
+            delay_ms(3000);  // Hold each position for 3 seconds
+        }
+        
+        test_count++;
+        printf("\n=== Servo test cycle %d complete ===\n", test_count);
+        printf("Check for smooth movement without stuttering\n");
+        printf("Press Ctrl+C to stop\n\n");
+        
+        delay_ms(2000);  // Pause between cycles
+    }
+}
+
+/*
+ * Task 7: Servo + Joystick Integration Test
+ * Tests servo control using joystick input from CAN
+ */
+void task7_servo_joystick_test(void) {
+    printf("=== Task 7: Servo + Joystick Integration Test ===\n");
+    printf("Real-time servo control using joystick from Node 1\n");
+    printf("Move joystick on Node 1 to control servo position\n\n");
+    
+    // Initialize CAN (using working configuration from Task 3)
+    uint32_t working_can_br = 0x00290165;
+    
+    can_init((CanInit){
+        .brp = 20, .propag = 2, .phase1 = 7, .phase2 = 6, .sjw = 1, .smp = 0
+    }, 0);
+    CAN0->CAN_BR = working_can_br;
+    
+    printf("CAN initialized at 125 kbps\n");
+    
+    // Initialize servo system
+    if (!servo_init()) {
+        printf("ERROR: Servo initialization failed!\n");
+        return;
+    }
+    
+    printf("Servo initialized successfully!\n");
+    printf("Ready for joystick control!\n\n");
+    
+    printf("Instructions:\n");
+    printf("- Move joystick X-axis on Node 1 to control servo\n");
+    printf("- Joystick left (0%%) -> Servo minimum position\n");
+    printf("- Joystick center (50%%) -> Servo center position\n");  
+    printf("- Joystick right (100%%) -> Servo maximum position\n\n");
+    
+    int msg_count = 0;
+    int servo_updates = 0;
+    
+    while (1) {
+        // Check for CAN messages
+        CanMsg rx_msg;
+        if (can_rx(&rx_msg)) {
+            msg_count++;
+            
+            // Try to decode joystick message
+            if (rx_msg.id == 0x100 && rx_msg.length == 5) {
+                // Extract joystick data
+                uint8_t joy_x = rx_msg.byte[0];
+                uint8_t joy_y = rx_msg.byte[1];
+                uint8_t joy_button = rx_msg.byte[2];
+                
+                printf("Joystick: X=%d%% Y=%d%% Button=%s -> ", 
+                       joy_x, joy_y, joy_button ? "PRESSED" : "Released");
+                
+                // Control servo with joystick X position
+                if (servo_set_from_joystick_x(joy_x)) {
+                    servo_updates++;
+                    printf("Servo position updated to %d%%\n", servo_get_position());
+                } else {
+                    printf("Servo update failed\n");
+                }
+            } else {
+                // Show raw message for debugging
+                printf("CAN RX: ID=0x%03X [", rx_msg.id);
+                for (int i = 0; i < rx_msg.length; i++) {
+                    printf("%02X%s", rx_msg.byte[i], (i < rx_msg.length-1) ? " " : "");
+                }
+                printf("]\n");
+            }
+        }
+        
+        delay_ms(50);  // Check every 50ms for smooth control
+        
+        // Print periodic status
+        static int status_counter = 0;
+        if (++status_counter >= 200) {  // Every 10 seconds (200 * 50ms)
+            printf("\n=== Status: CAN RX:%d, Servo Updates:%d ===\n", 
+                   msg_count, servo_updates);
+            servo_print_status();
+            status_counter = 0;
         }
     }
 }

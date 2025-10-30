@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include "sam.h"
 #include "uart.h"
-#include "task6.h"
+#include "test/task7.h"
 
 
 
@@ -20,12 +20,21 @@ int main()
     // Initialize UART for debugging
     uart_init(84000000, 9600);
    
+    printf("\n\n=== Node 2 Starting ===\n");
 
-    // Run the test functions (defined in test/task6.c)
-    run_all_tests();
+    // Choose which test to run:
+    
+    // Option 1: PWM Range Test (for oscilloscope verification)
+    // task7_pwm_range_test();
+    
+    // Option 2: Joystick Servo Control (actual game mode)
+    // task7_joystick_servo_control();
+    
+    // Option 3: IR Sensor Test (check signal before connecting!)
+    task7_ir_sensor_test();
     
     // Should never reach here
     while (1) {
-        // Main loop - tests run in run_all_tests()
+        // Main loop - tests run in test functions
     }
 }

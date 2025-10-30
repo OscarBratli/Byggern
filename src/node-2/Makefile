@@ -10,7 +10,11 @@ SOURCE_FILES = \
 	main.c \
 	uart.c \
 	can.c \
-	test/task6.c
+	pwm.c \
+	servo.c \
+	ir_sensor.c \
+	test/task6.c \
+	test/task7.c
 
 # Feel free to ignore anything below this line
 VPATH:= $(dir $(SOURCE_FILES))
