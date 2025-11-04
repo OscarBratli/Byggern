@@ -23,60 +23,35 @@
 static uint8_t current_speed = 0;
 static motor_direction_t current_direction = MOTOR_DIR_RIGHT;
 
+// PI controller state
+static float pi_kp = 0.0f;
+static float pi_ki = 0.0f;
+static int16_t pi_target = 0;
+static float pi_integral = 0.0f;
+
 bool motor_init(void) {
-    printf("\n=== Initializing Motor Driver (A3959) ===\n");
-    printf("Mode: Phase/Enable - PWM on ENABLE, digital on DIR\n");
-    
     // 1. Enable PWM peripheral clock
     PMC->PMC_PCER1 |= (1 << (ID_PWM - 32));
-    printf("- PWM clock enabled\n");
     
     // 2. Configure PIO for PWM output (PB12 = PWMH0 = ENABLE pin)
-    PIOB->PIO_PDR |= PIO_PB12;     // Disable PIO control (let PWM peripheral control it)
+    PIOB->PIO_PDR |= PIO_PB12;     // Disable PIO control
     PIOB->PIO_ABSR |= PIO_PB12;    // Select peripheral B (PWM)
-    printf("- PB12 (PWMH0) configured for PWM -> ENABLE pin\n");
     
     // 3. Configure DIR pin (PC23 = PHASE/DIR pin)
-    PMC->PMC_PCER0 |= (1 << ID_PIOC);  // Enable PIOC clock
-    PIOC->PIO_PER |= MOTOR_DIR_PIN;     // Enable PIO control
-    PIOC->PIO_OER |= MOTOR_DIR_PIN;     // Output enable
-    PIOC->PIO_CODR |= MOTOR_DIR_PIN;    // Set LOW initially
-    printf("- PC23 configured as digital output -> PHASE/DIR pin\n");
+    PMC->PMC_PCER0 |= (1 << ID_PIOC);
+    PIOC->PIO_PER |= MOTOR_DIR_PIN;
+    PIOC->PIO_OER |= MOTOR_DIR_PIN;
+    PIOC->PIO_CODR |= MOTOR_DIR_PIN;
     
-    // 4. Configure PWM for motor speed control
-    // Disable PWM channel during configuration
+    // 4. Configure PWM for motor speed control (20 kHz)
     PWM->PWM_DIS = (1 << MOTOR_PWM_CHANNEL);
     
-    // PWM frequency: 20 kHz (50us period) - motor acts as low pass filter
-    // Clock: MCK/64 = 84MHz/64 = 1.3125 MHz
-    // Period = 1.3125 MHz / 20 kHz = 65.625 ≈ 66 ticks
-    
-    PWM->PWM_CLK = PWM_CLK_PREA(6)     // Divider = 2^6 = 64
-                 | PWM_CLK_DIVA(1);    // Linear divider = 1
-    
-    // Channel configuration
-    PWM->PWM_CH_NUM[MOTOR_PWM_CHANNEL].PWM_CMR = 
-        PWM_CMR_CPRE_CLKA;              // Use CLKA as clock source
-    
-    // Set period (20 kHz = 50us)
+    PWM->PWM_CLK = PWM_CLK_PREA(6) | PWM_CLK_DIVA(1);
+    PWM->PWM_CH_NUM[MOTOR_PWM_CHANNEL].PWM_CMR = PWM_CMR_CPRE_CLKA;
     PWM->PWM_CH_NUM[MOTOR_PWM_CHANNEL].PWM_CPRD = 66;
-    
-    // Set initial duty cycle to 100% (stopped - !ENABLE is active low!)
-    // 100% duty = pin always HIGH = motor disabled = STOPPED
     PWM->PWM_CH_NUM[MOTOR_PWM_CHANNEL].PWM_CDTY = 66;
     
-    // Enable PWM channel
     PWM->PWM_ENA = (1 << MOTOR_PWM_CHANNEL);
-    
-    printf("- PWM configured: 20kHz, duty=100%% (pin HIGH = STOPPED)\n");
-    printf("- A3959 enabled by board power (no chip select needed)\n");
-    printf("=====================================\n");
-    printf("IMPORTANT: Verify these physical connections:\n");
-    printf("  1. Arduino Due Pin D21/D22 (PB12) -> Motor Shield ENABLE/PWM\n");
-    printf("  2. Arduino Due Pin D7 (PC23) -> Motor Shield PHASE/DIR\n");
-    printf("  3. Motor+ and Motor- (2mm plugs) -> Motor\n");
-    printf("  4. 12V power to motor shield\n");
-    printf("=====================================\n\n");
     
     current_speed = 0;
     current_direction = MOTOR_DIR_RIGHT;
@@ -144,4 +119,48 @@ uint8_t motor_get_speed(void) {
 
 motor_direction_t motor_get_direction(void) {
     return current_direction;
+}
+
+// ========== PI Controller Functions ==========
+
+void motor_pi_init(float kp, float ki) {
+    pi_kp = kp;
+    pi_ki = ki;
+    pi_target = 0;  // Will be set by first joystick command
+    pi_integral = 0.0f;
+    printf("PI Controller: Kp=%.3f, Ki=%.5f\n", kp, ki);
+}
+
+void motor_pi_set_target(int16_t target) {
+    pi_target = target;
+}
+
+int8_t motor_pi_update(int16_t position) {
+    // Calculate error
+    int16_t error = pi_target - position;
+    
+    // Update integral with anti-windup
+    pi_integral += (float)error;
+    
+    // Anti-windup: Clamp integral to prevent it from growing too large
+    float max_integral = 500.0f;  // Limit integral contribution
+    if (pi_integral > max_integral) pi_integral = max_integral;
+    if (pi_integral < -max_integral) pi_integral = -max_integral;
+    
+    // Reset integral when very close to target (fine positioning)
+    if (abs(error) < 10) {
+        pi_integral = 0.0f;
+    }
+    
+    // Calculate output: PI control law
+    float output = (float)error * pi_kp + pi_integral * pi_ki;
+    
+    // INVERT output because motor direction is opposite to encoder direction!
+    output = -output;
+    
+    // Limit output to motor range
+    if (output > 100.0f) output = 100.0f;
+    if (output < -100.0f) output = -100.0f;
+    
+    return (int8_t)output;
 }

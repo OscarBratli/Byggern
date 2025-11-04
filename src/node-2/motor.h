@@ -45,6 +45,29 @@ bool motor_init(void);
 void motor_set(int8_t speed, motor_direction_t direction);
 
 /**
+ * @brief Initialize PI controller for position control
+ * 
+ * @param kp Proportional gain
+ * @param ki Integral gain
+ */
+void motor_pi_init(float kp, float ki);
+
+/**
+ * @brief Set target position for PI controller
+ * 
+ * @param target Target position in encoder counts
+ */
+void motor_pi_set_target(int16_t target);
+
+/**
+ * @brief PI controller update - call at regular intervals
+ * 
+ * @param position Current position in encoder counts
+ * @return Motor command (-100 to +100)
+ */
+int8_t motor_pi_update(int16_t position);
+
+/**
  * @brief Set motor speed with signed value
  * 
  * Negative = left, Positive = right, 0 = stop

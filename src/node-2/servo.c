@@ -56,8 +56,6 @@ static uint8_t servo_pulse_width_to_position(uint16_t pulse_width_us) {
 }
 
 bool servo_init(void) {
-    printf("\n=== Initializing Servo Controller ===\n");
-    
     // Initialize PWM driver
     if (!pwm_init()) {
         printf("ERROR: Failed to initialize PWM driver!\n");
@@ -68,27 +66,17 @@ bool servo_init(void) {
     servo_initialized = true;
     servo_set_position(SERVO_POSITION_CENTER);
     
-    printf("✓ Servo initialized at center position (%d%%)\n", SERVO_POSITION_CENTER);
-    printf("  Position range: %d%% - %d%%\n", 
-           SERVO_POSITION_MIN, SERVO_POSITION_MAX);
-    printf("  Pulse width range: %dus - %dus\n", 
-           PWM_SERVO_MIN_US, PWM_SERVO_MAX_US);
-    printf("=====================================\n\n");
-    
     return true;
 }
 
 bool servo_set_position(uint8_t position) {
     if (!servo_initialized) {
-        printf("ERROR: Servo not initialized!\n");
         return false;
     }
     
     // SAFETY: Clamp to valid position range
     uint8_t safe_position = position;
     if (safe_position > SERVO_POSITION_MAX) {
-        printf("WARNING: Position %d%% clamped to max (%d%%)\n", 
-               position, SERVO_POSITION_MAX);
         safe_position = SERVO_POSITION_MAX;
     }
     

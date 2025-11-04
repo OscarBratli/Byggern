@@ -73,5 +73,5 @@ build/task8.o: test/task8.c sam/sam3x/include/sam.h \
  sam/sam3x/include/instance/instance_rtc.h \
  sam/sam3x/include/instance/instance_gpbr.h \
  sam/sam3x/include/pio/pio_sam3x8e.h test/../uart.h test/../encoder.h \
- test/../motor.h test/../servo.h test/../can.h test/../pi_controller.h \
- test/../time.h test/task8.h
+ test/../motor.h test/../servo.h test/../can.h test/../time.h \
+ test/task8.h

@@ -99,14 +99,6 @@ void task7_joystick_servo_control(void) {
  * Use a multimeter to verify signal is in 0-3.3V range
  */
 void task7_ir_sensor_test(void) {
-    printf("\n=== Task 7: IR Sensor Test ===\n");
-    printf("Hardware setup:\n");
-    printf("  IR LED:   +5V -> IR LED -> 47Ω -> GND\n");
-    printf("  Photodiode: +5V -> Photodiode -> R -> Your circuit -> PA2 (A7)\n");
-    printf("  ADC Pin:  PA2 (Arduino A7) - Range: 0-3.3V\n\n");
-    
-    printf("IMPORTANT: Check signal with multimeter BEFORE connecting!\n");
-    printf("           Signal must be 0-3.3V (NOT 5V!)\n\n");
     
     // Initialize IR sensor
     ir_sensor_init();
@@ -116,11 +108,6 @@ void task7_ir_sensor_test(void) {
     
     // Set threshold to 70% of baseline
     uint16_t threshold = baseline * 7 / 10;
-    
-    printf("\nStarting continuous monitoring...\n");
-    printf("Threshold: %u mV\n", threshold);
-    printf("Break the beam to test detection!\n\n");
-    
     // Reset score at start
     ir_sensor_reset_score();
     

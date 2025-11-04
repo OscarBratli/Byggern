@@ -20,9 +20,6 @@ int main()
 
     // Initialize UART for debugging
     uart_init(84000000, 9600);
-   
-    printf("\n\n=== Node 2 Starting ===\n");
-
     // Choose which test to run:
     
     // Option 1: PWM Range Test (for oscilloscope verification)
@@ -32,7 +29,7 @@ int main()
     // task7_joystick_servo_control();
     
     // Option 3: IR Sensor Test (check signal before connecting!)
-    // task7_ir_sensor_test();
+     //task7_ir_sensor_test();
     
     // Option 4: Encoder Test (Task 8 - verify encoder reading)
     // task8_encoder_test();
@@ -40,9 +37,12 @@ int main()
     // Option 5: Joystick Motor Control (Task 8 Step 3 - open-loop motor + servo)
     // task8_joystick_motor_control();
     
-    // Option 6: PI Position Control (Task 8 Step 4 - closed-loop with feedback)
-    task8_pi_position_control();
+    // Option 6: Simple PI Position Control (Task 8 Step 4)
+    // task8_simple_pi();
     
+    // Option 7: Motor Calibration (Auto-find encoder range)
+    task8_motor_calibration();
+  
     // Should never reach here
     while (1) {
         // Main loop - tests run in test functions

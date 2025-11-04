@@ -15,7 +15,6 @@ SOURCE_FILES = \
 	ir_sensor.c \
 	encoder.c \
 	motor.c \
-	pi_controller.c \
 	time.c \
 	test/task6.c \
 	test/task7.c \
