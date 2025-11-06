@@ -53,6 +53,25 @@ make
 sudo make install
 ```
 
+### Setup USB permissions for Atmel ICE debugger
+
+To flash the Arduino Due without requiring `sudo` every time, you need to add udev rules for the Atmel ICE debugger:
+
+```bash
+echo 'SUBSYSTEM=="usb", ATTR{idVendor}=="03eb", ATTR{idProduct}=="2141", MODE="0666", GROUP="dialout"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="2141", MODE="0666", GROUP="dialout"' | sudo tee /etc/udev/rules.d/99-atmel-ice.rules
+
+sudo udevadm control --reload-rules && sudo udevadm trigger
+```
+
+After running these commands:
+1. Unplug the Atmel ICE debugger USB cable
+2. Wait 2 seconds
+3. Plug it back in
+4. Now `make flash` will work without sudo
+
+**Note:** You'll need to run these commands on each new computer you use for development.
+
 ## Build project
 
 ```

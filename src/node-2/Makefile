@@ -16,6 +16,8 @@ SOURCE_FILES = \
 	encoder.c \
 	motor.c \
 	time.c \
+	solenoid.c \
+	game.c \
 	test/task6.c \
 	test/task7.c \
 	test/task8.c

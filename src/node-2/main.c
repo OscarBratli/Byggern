@@ -1,17 +1,13 @@
 /*
  * main.c - Node 2 Main Program
  * 
- * Clean main program for Node 2 (SAM3X8E Arduino Due)
- * Test functions have been moved to test/ for better organization
+ * Ping Pong Game System
  */
 
 #include <stdio.h>
 #include "sam.h"
 #include "uart.h"
-#include "test/task7.h"
-#include "test/task8.h"
-
-
+#include "game.h"
 
 int main()
 {
@@ -20,31 +16,12 @@ int main()
 
     // Initialize UART for debugging
     uart_init(84000000, 9600);
-    // Choose which test to run:
     
-    // Option 1: PWM Range Test (for oscilloscope verification)
-    // task7_pwm_range_test();
+    // Initialize game system
+    game_init();
     
-    // Option 2: Joystick Servo Control (actual game mode)
-    // task7_joystick_servo_control();
-    
-    // Option 3: IR Sensor Test (check signal before connecting!)
-     //task7_ir_sensor_test();
-    
-    // Option 4: Encoder Test (Task 8 - verify encoder reading)
-    // task8_encoder_test();
-    
-    // Option 5: Joystick Motor Control (Task 8 Step 3 - open-loop motor + servo)
-    // task8_joystick_motor_control();
-    
-    // Option 6: Simple PI Position Control (Task 8 Step 4)
-    // task8_simple_pi();
-    
-    // Option 7: Motor Calibration (Auto-find encoder range)
-    task8_motor_calibration();
-  
-    // Should never reach here
+    // Main game loop
     while (1) {
-        // Main loop - tests run in test functions
+        game_loop();
     }
 }

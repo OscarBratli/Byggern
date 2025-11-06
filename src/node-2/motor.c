@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+
+ //NOTE TO SELF : DEBOUNCE -> 3  to redue noise on encoder 
 // Pin definitions for TTK4155 Motor Shield
 // According to A3959 phase/enable mode and TTK4155 Motor Shield pinout:
 // - PWM on ENABLE pin (PB12 = PWMH0 = Arduino Due pin 21/22) for speed control
@@ -60,9 +62,9 @@ bool motor_init(void) {
 }
 
 void motor_set(int8_t speed, motor_direction_t direction) {
-    // Clamp speed to 0-100
+    // Clamp speed
     if (speed < 0) speed = 0;
-    if (speed > 100) speed = 100;
+    if (speed > 70) speed = 70;
     
     current_speed = speed;
     current_direction = direction;

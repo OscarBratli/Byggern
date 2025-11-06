@@ -115,7 +115,7 @@ void task7_ir_sensor_test(void) {
     bool debounced_state = false;  // Stable debounced state
     
     // Debouncing variables
-    #define DEBOUNCE_COUNT 5  // Must see same state 5 times in a row
+    #define DEBOUNCE_COUNT 3  // Must see same state X times in a row
     uint8_t broken_count = 0;
     uint8_t intact_count = 0;
     

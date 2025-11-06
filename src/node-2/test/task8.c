@@ -10,6 +10,8 @@
 #include "../servo.h"
 #include "../can.h"
 #include "../time.h"
+#include "../solenoid.h"
+#include "../ir_sensor.h"
 #include "task8.h"
 
 static void delay_ms(uint32_t ms) {
@@ -98,6 +100,10 @@ void task8_joystick_motor_control(void) {
         return;
     }
     
+    // Initialize solenoid
+    solenoid_init();
+    printf("Solenoid initialized\n");
+    
     // Initialize CAN
     uint32_t working_can_br = 0x00290165;
     can_init((CanInit){
@@ -111,14 +117,24 @@ void task8_joystick_motor_control(void) {
     CanMsg msg;
     uint8_t last_x = 255;
     uint8_t last_y = 255;
+    uint8_t last_button = 0;
     
     while (1) {
         // Check for CAN messages
         if (can_rx(&msg)) {
-            // Joystick data (ID = 0x00): [X, Y, ?, Button, Slider]
-            if (msg.id == 0x00 && msg.length >= 2) {
-                uint8_t joy_x = msg.byte[0];  // X-axis for motor (0-100%)
-                uint8_t joy_y = msg.byte[1];  // Y-axis for servo (0-100%)
+            // Joystick data (ID = 0x00): [X, Y, JoyBtn, SliderX, SliderY]
+            if (msg.id == 0x00 && msg.length >= 3) {
+                uint8_t joy_x = msg.byte[0];      // X-axis for motor (0-100%)
+                uint8_t joy_y = msg.byte[1];      // Y-axis for servo (0-100%)
+                uint8_t joy_btn = msg.byte[2];    // Joystick button state (0=released, 1=pressed)
+                
+                // ========== SOLENOID CONTROL (Joystick Button) ==========
+                // Fire solenoid on joystick button press (rising edge detection)
+                if (joy_btn && !last_button) {
+                    printf("FIRE! Solenoid activated\n");
+                    solenoid_fire(50);  // 50ms pulse
+                }
+                last_button = joy_btn;
                 
                 // ========== MOTOR CONTROL (X-axis) ==========
                 // Map joystick X to motor speed: -100 to +100
@@ -153,130 +169,6 @@ void task8_joystick_motor_control(void) {
     }
 }
 
-/**
- * Simple PI Position Control
- * 
- * Joystick X controls target position (-100% to +100%)
- * PI controller drives motor to reach target position
- * Based on proven implementations from student repos
- */
-void task8_simple_pi(void) {
-    printf("\n=== Task 8: Simple PI Controller ===\n");
-    
-    // Initialize servo first
-    if (!servo_init()) {
-        printf("ERROR: Servo init failed!\n");
-        return;
-    }
-    servo_set_position(50);  // Center servo
-    printf("Servo initialized and centered\n");
-    
-    // Initialize encoder
-    if (!encoder_init()) {
-        printf("ERROR: Encoder init failed!\n");
-        return;
-    }
-    printf("Encoder initialized\n");
-    
-    // Initialize motor but keep it DISABLED
-    if (!motor_init()) {
-        printf("ERROR: Motor init failed!\n");
-        return;
-    }
-    motor_set_signed(0);  // Stop motor initially
-    printf("Motor initialized and DISABLED\n");
-    
-    // Initialize CAN (use exact same method as working test)
-    uint32_t working_can_br = 0x00290165;
-    can_init((CanInit){.brp=20, .propag=2, .phase1=7, .phase2=6, .sjw=1, .smp=0}, 0);
-    CAN0->CAN_BR = working_can_br;
-    printf("CAN initialized\n");
-    
-    // WAIT 2 seconds - USER SHOULD CENTER THE MOTOR MANUALLY!
-    printf("\n*** MANUALLY CENTER THE MOTOR NOW! ***\n");
-    printf("*** Move motor to middle of travel range ***\n");
-    printf("*** Waiting 2 seconds... ***\n");
-    time_spinFor(msecs(2000));
-    
-    // NOW reset encoder after motor has settled
-    encoder_reset();
-    printf("Encoder reset to 0\n");
-    
-    // Small delay to verify reset
-    time_spinFor(msecs(100));
-    
-    // Read initial position - should be 0 or very close
-    int16_t initial_pos = encoder_read();
-    printf("Initial encoder position after reset: %d\n", initial_pos);
-    
-    // PI gains - POSITION CONTROL MODE
-    // Lower gains because errors are much larger (±2000 vs ±200)
-    // Kp=0.08: Smooth response without saturation
-    // Ki=0.001: Minimal to eliminate steady-state error
-    motor_pi_init(0.08f, 0.001f);
-    motor_pi_set_target(initial_pos);  // Start at current position!
-    
-    printf("\n*** MOTOR NOW ENABLED - Starting PI control ***\n");
-    
-    uint32_t last_debug = time_now();
-    int16_t last_target = initial_pos;
-    uint8_t last_y = 255;
-
-    while (1) {
-        CanMsg msg;
-        if (can_rx(&msg)) {
-            if (msg.id == 0x00 && msg.length >= 2) {
-                // Joystick X -> Motor PI POSITION control
-                // Joystick directly maps to target position
-                uint8_t joy_x = msg.byte[0];
-                
-                // Map joystick (0-100) to encoder position range
-                // Assume motor can travel ±2000 encoder counts from center
-                // joy_x=0 -> position=-2000 (full left)
-                // joy_x=50 -> position=0 (center)
-                // joy_x=100 -> position=+2000 (full right)
-                int16_t target = (int16_t)((joy_x - 50) * 40);  // Scale: ±2000 counts
-                
-                motor_pi_set_target(target);
-                
-                // Read current position
-                int16_t position = encoder_read();
-                
-                // Update PI controller
-                int8_t motor_cmd = motor_pi_update(position);
-                
-                // Send command to motor
-                motor_set_signed(motor_cmd);
-                
-                // Joystick Y -> Servo control (same as open-loop test, but inverted)
-                uint8_t joy_y = msg.byte[1];
-                
-                // Apply deadzone to servo (center around 50)
-                int8_t joy_y_centered = (int8_t)(joy_y - 50);
-                if (joy_y_centered > -5 && joy_y_centered < 5) {
-                    joy_y = 50;  // Force to center if within deadzone
-                }
-                
-                uint8_t servo_percent = 100 - joy_y;  // Invert Y axis
-                
-                // Only update servo if value changed significantly (larger threshold)
-                if (abs((int8_t)(joy_y - last_y)) > 3) {
-                    servo_set_position(servo_percent);
-                    last_y = joy_y;
-                }
-                
-                // Debug output every 500ms
-                uint32_t now = time_now();
-                if ((now - last_debug) >= 500) {
-                    int16_t error = last_target - position;
-                    printf("Joy:%3d Tgt:%4d Pos:%4d Err:%4d Mot:%4d Srv:%3d%%\n", 
-                           joy_x, last_target, position, error, motor_cmd, servo_percent);
-                    last_debug = now;
-                }
-            }
-        }
-    }
-}
 
 /**
  * Motor Calibration Routine
@@ -303,6 +195,10 @@ void task8_motor_calibration(void) {
         printf("ERROR: Failed to initialize motor!\n");
         return;
     }
+    
+    // Initialize solenoid
+    solenoid_init();
+    printf("Solenoid initialized\n");
     
     // Initialize CAN
     uint32_t working_can_br = 0x00290165;
@@ -342,17 +238,17 @@ void task8_motor_calibration(void) {
     
     int16_t min_encoder = encoder_read();
     printf("LEFT: %d\n", min_encoder);
-    time_spinFor(msecs(1000));
+    time_spinFor(msecs(500));
     
     // Find RIGHT limit
     printf("Finding RIGHT limit (6s)...\n");
     motor_set_signed(30);
-    time_spinFor(msecs(6000));
+    time_spinFor(msecs(3000));
     motor_set_signed(0);
     
     int16_t max_encoder = encoder_read();
     printf("RIGHT: %d\n", max_encoder);
-    time_spinFor(msecs(1000));
+    time_spinFor(msecs(500));
     
     // Calculate calibration
     int16_t encoder_range = max_encoder - min_encoder;
@@ -392,18 +288,94 @@ void task8_motor_calibration(void) {
     
     // Start PI control
     printf("Starting PI control...\n");
-    motor_pi_init(0.08f, 0.001f);
+    motor_pi_init(0.06f, 0.001f);
     motor_pi_set_target(encoder_center);
     
     uint32_t last_debug = time_now();
     uint8_t last_y = 255;
+    uint8_t last_button = 0;
+    
+    // Initialize IR sensor goal detection
+    ir_sensor_init();
+    uint16_t ir_baseline = ir_sensor_calibrate();
+    uint16_t ir_threshold = ir_baseline * 7 / 10;
+    printf("IR sensor initialized: baseline=%d mV, threshold=%d mV\n", ir_baseline, ir_threshold);
+    
+    // Debouncing: require beam to be broken for multiple consecutive readings
+    #define DEBOUNCE_COUNT 2  // Must see beam broken 5 times in a row
+    uint8_t beam_broken_counter = 0;
+
+    // Scoring: increment when beam stays intact for 2s continuously
+    uint32_t last_time = time_now();
+    uint32_t intact_accumulator_ms = 0;
+    uint32_t local_score = 0;
     
     while (1) {
-        CanMsg msg;
-        if (can_rx(&msg)) {
-            if (msg.id == 0x00 && msg.length >= 2) {
-                uint8_t joy_x = msg.byte[0];
+        uint32_t now = time_now();
+        uint32_t dt = (now >= last_time) ? (now - last_time) : 0;
+        last_time = now;
+
+        // ========== BEAM STATE HANDLING WITH DEBOUNCING ==========
+        bool beam_currently_broken = ir_sensor_is_beam_broken(ir_threshold);
+        
+        if (beam_currently_broken) {
+            // Increment counter when beam is broken
+            beam_broken_counter++;
+            
+            // Only trigger game over after consecutive broken readings
+            if (beam_broken_counter >= DEBOUNCE_COUNT) {
+                // Beam is definitely broken - game over
+                if (local_score > 0) {
+                    printf("\n*** Beam broken - final score: %lu ***\n", local_score);
+                } else {
+                    printf("\n*** Beam broken - no score ***\n");
+                }
+                printf("*** GAME OVER - Returning to menu ***\n");
                 
+                // Send game over message to Node 1 (CAN ID 0x01)
+                CanMsg game_over_msg;
+                game_over_msg.id = 0x01;
+                game_over_msg.length = 4;
+                game_over_msg.byte[0] = 0xFF;  // Game over flag
+                game_over_msg.byte[1] = (local_score >> 24) & 0xFF;
+                game_over_msg.byte[2] = (local_score >> 16) & 0xFF;
+                game_over_msg.byte[3] = (local_score >> 8) & 0xFF;
+                can_tx(game_over_msg);
+                
+                motor_set_signed(0);  // Stop motor
+                return;  // Exit back to menu
+            }
+        } else {
+            // Beam is intact - reset counter and accumulate score time
+            beam_broken_counter = 0;
+            intact_accumulator_ms += dt;
+            
+            if (intact_accumulator_ms >= 2000) {
+                // Award one score point for each full 2s of uninterrupted play
+                intact_accumulator_ms -= 2000;
+                local_score++;
+                ir_sensor_increment_score();
+                printf("+++ Score +1  (total: %lu) +++\n", local_score);
+            }
+        }
+
+        // ========== CAN MESSAGE HANDLING ==========
+        CanMsg msg;
+        if (can_rx(&msg)) {                
+            if (msg.id == 0x00 && msg.length >= 3) {
+                uint8_t joy_x = msg.byte[0];      // X-axis for motor (0-100%)
+                uint8_t joy_y = msg.byte[1];      // Y-axis for servo (0-100%)
+                uint8_t joy_btn = msg.byte[2];    // Joystick button state (0=released, 1=pressed)
+                
+                // ========== SOLENOID CONTROL (Joystick Button) ==========
+                // Fire solenoid on joystick button press (rising edge detection)
+                if (joy_btn && !last_button) {
+                    printf("FIRE! Solenoid activated\n");
+                    solenoid_fire(50);  // 50ms pulse
+                }
+                last_button = joy_btn;
+                
+                // ========== MOTOR CONTROL (PI Position Control) ==========
                 int16_t target = min_encoder + (int16_t)(joy_x * scale_factor);
                 motor_pi_set_target(target);
                 
@@ -411,8 +383,7 @@ void task8_motor_calibration(void) {
                 int8_t motor_cmd = motor_pi_update(position);
                 motor_set_signed(motor_cmd);
                 
-                // Servo control
-                uint8_t joy_y = msg.byte[1];
+                // ========== SERVO CONTROL (Y-axis) ==========
                 int8_t joy_y_centered = (int8_t)(joy_y - 50);
                 if (joy_y_centered > -5 && joy_y_centered < 5) {
                     joy_y = 50;
@@ -426,7 +397,6 @@ void task8_motor_calibration(void) {
                 }
                 
                 // Debug every 500ms
-                uint32_t now = time_now();
                 if ((now - last_debug) >= 500) {
                     int16_t error = target - position;
                     printf("Joy:%3d Tgt:%4d Pos:%4d Err:%4d Mot:%4d%%\n", 
@@ -435,5 +405,8 @@ void task8_motor_calibration(void) {
                 }
             }
         }
+        
+        // Rate limiting: 20ms per loop iteration (50Hz control loop)
+        time_spinFor(msecs(20));
     }
 }

@@ -1,4 +1,4 @@
-build/task8.o: test/task8.c sam/sam3x/include/sam.h \
+build/game.o: game.c test/task8.h game.h sam/sam3x/include/sam.h \
  sam/sam3x/include/sam3x8e.h sam/cmsis/core_cm3.h \
  sam/cmsis/cmsis_version.h sam/cmsis/cmsis_compiler.h \
  sam/cmsis/cmsis_gcc.h sam/cmsis/mpu_armv7.h \
@@ -72,6 +72,5 @@ build/task8.o: test/task8.c sam/sam3x/include/sam.h \
  sam/sam3x/include/instance/instance_wdt.h \
  sam/sam3x/include/instance/instance_rtc.h \
  sam/sam3x/include/instance/instance_gpbr.h \
- sam/sam3x/include/pio/pio_sam3x8e.h test/../uart.h test/../encoder.h \
- test/../motor.h test/../servo.h test/../can.h test/../time.h \
- test/../solenoid.h test/../ir_sensor.h test/task8.h
+ sam/sam3x/include/pio/pio_sam3x8e.h can.h motor.h encoder.h servo.h \
+ ir_sensor.h solenoid.h time.h
