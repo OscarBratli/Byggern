@@ -1,9 +1,12 @@
+https://github.com/OscarBratli/Byggern
+
 # Byggern
 
-File Repository for Byggern Course at NTNU
-Here is how the branching and forking should be done, to ensure a clean repository
-
 [wiring_tables.md](docs/wiring_tables.md) contains lists of the pin connections.
+
+## AI Disclaimer
+
+Some code, including comments, documentation and scripts in this repository was created with assistance from AI tools like Github Copilot.
 
 ## Installation
 
