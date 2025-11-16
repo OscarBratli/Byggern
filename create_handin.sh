@@ -10,10 +10,18 @@ EXCLUDE_LIST=(
     "node-1/src/fonts"
     "node-2/build"
     "node-2/sam"
+    "node-2/main.c"
+    "node-2/Makefile"
     "node-2/can_controller.c"
     "node-2/can_controller.h"
     "node-2/can_interrupt.c"
     "node-2/can_interrupt.h"
+    "node-2/can.c"
+    "node-2/can.h"
+    "node-2/time.c"
+    "node-2/time.h"
+    "node-2/uart.c"
+    "node-2/uart.h"
 )
 
 # Delete existing handin directory if it exists
